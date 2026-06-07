@@ -1,0 +1,389 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --container-max: 1200px;
+
+  /* ── Motion duration scale ───────────────────────────────── */
+  --dur-xs:   120ms;   /* instant: focus rings, toggles          */
+  --dur-sm:   200ms;   /* micro: button hover, link highlight     */
+  --dur-md:   360ms;   /* component: card hover, nav scroll       */
+  --dur-lg:   560ms;   /* reveal: page elements entering view     */
+  --dur-xl:   900ms;   /* ambient: colour shifts, orb transitions */
+  --dur-2xl: 1400ms;   /* cinematic: count-up, fill lines         */
+
+  /* ── Easing curves ───────────────────────────────────────── */
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);  /* decelerate-in: elements landing    */
+  --ease-exit:  cubic-bezier(0.4, 0, 1, 1);      /* accelerate-out: elements leaving   */
+  --ease-io:    cubic-bezier(0.4, 0, 0.2, 1);    /* balanced: hover states, ambient    */
+
+  /* ── Ambient system ──────────────────────────────────────── */
+  --ambient: #3DBFA3;
+  --ambient-intensity: 1;
+
+  /* ── Signature brand gradients ───────────────────────────────
+     One definition, consumed everywhere (gradient text, progress bar,
+     timeline fills, bg-grad-* utilities) so the Sapphire→Teal→Lumive
+     blend is pixel-identical site-wide — the core of instant recognition. */
+  --grad-brand:   linear-gradient(100deg, #1B3F72 0%, #1A8C6B 60%, #3DBFA3 100%);
+  --grad-brand-h: linear-gradient(90deg,  #1B3F72 0%, #1A8C6B 55%, #3DBFA3 100%);
+  --grad-spark:   linear-gradient(135deg, #1A8C6B 0%, #3DBFA3 100%);
+
+  /* ── Depth / z-layer scale ───────────────────────────────────
+     One ordered model for spatial stacking: background lights sit behind
+     content, content sits below chrome, chrome below transient feedback. */
+  --z-background: 1;    /* ambient light orbs (atmo-field)         */
+  --z-midground:  2;    /* depth vignette                          */
+  --z-content:    10;   /* page content baseline                   */
+  --z-cursor:     45;   /* cursor glow                             */
+  --z-nav:        50;   /* sticky navigation                       */
+  --z-progress:   60;   /* scroll progress bar                     */
+  --z-launcher:   70;   /* assistant launcher                      */
+  --z-overlay:    75;   /* drawer / modal backdrop                 */
+  --z-modal:      80;   /* assistant drawer / dialogs              */
+  --z-tap:        90;   /* tap-glow feedback (always on top)       */
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #E8EFF9;
+  color: #0E1C2F;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Reveal-on-scroll: starts hidden, .is-visible (set by observer) lands in */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity var(--dur-lg) var(--ease-enter),
+              transform var(--dur-lg) var(--ease-enter);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* Context-aware: content revealed mid-flick snaps in quickly so it is never
+   caught mid-fade as empty space. Calm scrolling keeps the full reveal. */
+.reveal.reveal-snap {
+  transition-duration: var(--dur-sm), var(--dur-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .animate-drift, .animate-pulse-soft { animation: none !important; }
+}
+
+/* Brass focus ring helper */
+.focus-brand:focus-visible {
+  outline: 2px solid #3DBFA3;
+  outline-offset: 2px;
+}
+
+/* Subtle grain/mesh background for hero */
+.mesh {
+  background:
+    radial-gradient(60% 50% at 18% 12%, rgba(61,191,163,0.18), transparent 60%),
+    radial-gradient(55% 60% at 85% 8%, rgba(91,127,166,0.22), transparent 55%),
+    radial-gradient(70% 70% at 75% 95%, rgba(27,63,114,0.10), transparent 60%);
+}
+
+/* ---- Premium elevation utilities (light-mode, on-brand) ---- */
+
+/* Frosted glass surface for light backgrounds */
+.glass {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+/* Cool-tinted glass for layered depth */
+.glass-tint {
+  background: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(232,239,249,0.45));
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+}
+/* Glass for dark sections */
+.glass-dark {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+/* Sapphire to teal gradient text — used sparingly on key words */
+.gradient-text {
+  background: var(--grad-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Faint dot grid for depth behind hero/lab */
+.dot-grid {
+  background-image: radial-gradient(rgba(27, 63, 114, 0.10) 1px, transparent 1px);
+  background-size: 24px 24px;
+  -webkit-mask-image: radial-gradient(70% 70% at 50% 40%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(70% 70% at 50% 40%, #000 40%, transparent 100%);
+}
+.dot-grid-dark {
+  background-image: radial-gradient(rgba(232, 239, 249, 0.08) 1px, transparent 1px);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(70% 70% at 50% 40%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(70% 70% at 50% 40%, #000 40%, transparent 100%);
+}
+
+/* Soft brand glow orbs — the section-level ambient lighting layer. Opacity
+   rides the shared scroll-intensity signal (lib/sync) so every ambient light
+   on the page breathes together: calm when still, dimmed during fast scroll. */
+.orb {
+  border-radius: 9999px;
+  filter: blur(60px);
+  pointer-events: none;
+  opacity: var(--sync-intensity, 1);
+}
+
+/* Thin top scroll-progress bar */
+.scroll-progress {
+  position: fixed; top: 0; left: 0; height: 2px; z-index: var(--z-progress);
+  background: var(--grad-brand-h);
+  transform-origin: 0 50%;
+}
+
+/* Continuous section seams — dark panels EMERGE from the light canvas: their
+   vertical edges fade transparent so the Mist body shows through and blends
+   into the light sections above/below, instead of a hard colour cut. This is
+   how the page reads as one continuous environment rather than stacked blocks.
+   Content lives in the solid middle band; only the padding edges feather. */
+.emerge-midnight {
+  background: linear-gradient(180deg,
+    transparent 0%, #0E1C2F 5%, #0E1C2F 95%, transparent 100%);
+}
+.emerge-sapphire-top {
+  /* top feathers into the light section above; bottom stays solid (meets the
+     dark footer, where a feather would flash an unwanted light band). */
+  background: linear-gradient(180deg,
+    transparent 0%, #1B3F72 6%, #1B3F72 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float, .animate-float-slow, .animate-drift { animation: none !important; }
+  .orb { opacity: 1; } /* hold ambient lights steady — no scroll-reactive dimming */
+}
+
+/* ---- Scroll storytelling scenes ---- */
+.story-scene {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 720ms var(--ease-enter), transform 720ms var(--ease-enter);
+}
+.story-scene.story-in { opacity: 1; transform: none; }
+
+/* ---- Process timeline ---- */
+.process-fill {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 1200ms var(--ease-enter);
+}
+.process-on .process-fill { transform: scaleX(1); }
+.process-node {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 480ms var(--ease-enter), transform 480ms var(--ease-enter);
+}
+.process-on .process-node { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .story-scene, .process-node { opacity: 1; transform: none; transition: none; }
+  .process-fill { transform: scaleX(1); transition: none; }
+}
+
+/* ============================================================
+   AI INTERACTION LAYER — perceptual, restrained, premium
+   ============================================================ */
+
+/* Cursor-following soft glow (desktop, pointer devices only) */
+.cursor-glow {
+  position: fixed;
+  top: 0; left: 0;
+  height: 360px; width: 360px;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: var(--z-cursor);
+  transform: translate3d(-50%, -50%, 0);
+  /* tinted by the active section's ambient colour so cursor light, section
+     lighting, and tap feedback all reinforce the same focus */
+  background: radial-gradient(
+    circle,
+    rgba(var(--atmo-r, 61), var(--atmo-g, 191), var(--atmo-b, 163), 0.10),
+    transparent 62%
+  );
+  opacity: 0;
+  transition: opacity var(--dur-md) var(--ease-io);
+  will-change: transform;
+}
+.cursor-glow.on { opacity: 1; }
+
+/* Subtle hover tilt for cards (driven by PointerFX) */
+[data-tilt] {
+  transition: transform var(--dur-md) var(--ease-io),
+              box-shadow var(--dur-md) var(--ease-io),
+              border-color var(--dur-md) var(--ease-io),
+              background-color var(--dur-md) var(--ease-io);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .cursor-glow { display: none; }
+  [data-tilt] { transition: box-shadow 0.3s ease; }
+}
+
+/* ============================================================
+   PERCEPTUAL LAYER — felt intelligence, spatial depth
+   ============================================================ */
+
+/*
+ * Depth field vignette — fixed viewport overlay that darkens the
+ * peripheral edges (top/bottom strips + radial corners) without
+ * touching body text. Creates a subconscious foreground/background
+ * separation: the content you are reading feels "closer".
+ *
+ * Opacity values are intentionally imperceptible (3–5%) so the
+ * effect registers below conscious threshold.
+ */
+.depth-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-midground);
+  background:
+    /* Top strip: content scrolling away recedes into shadow */
+    linear-gradient(
+      180deg,
+      rgba(14, 28, 47, 0.052) 0%,
+      transparent 13%
+    ),
+    /* Bottom strip: upcoming content in penumbra */
+    linear-gradient(
+      0deg,
+      rgba(14, 28, 47, 0.038) 0%,
+      transparent 16%
+    ),
+    /* Radial vignette: peripheral dims, centre brightens */
+    radial-gradient(
+      ellipse 90% 94% at 50% 50%,
+      transparent 50%,
+      rgba(14, 28, 47, 0.028) 100%
+    );
+}
+
+/*
+ * Atmospheric orbs — viewport-fixed focal lights.
+ * Position is driven by JS (transform only — compositor-friendly).
+ * Colour is driven by CSS custom properties set on :root.
+ * The primary orb tracks each section's attention focal point;
+ * the secondary is a softer counterpoint on the opposite side.
+ */
+.atmo-orb {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  border-radius: 9999px;
+  filter: blur(72px);
+  will-change: transform, opacity;
+  z-index: var(--z-background);
+}
+.atmo-primary { width: 840px; height: 720px; }
+.atmo-secondary { width: 580px; height: 500px; }
+
+/*
+ * Section entry pulse — a brief inner luminance bloom when a section
+ * becomes the active reading zone. Uses inset box-shadow so it is
+ * independent of overflow:hidden and z-index stacking.
+ * The colour matches --atmo-r/g/b set by PerceptualLayer.
+ */
+@keyframes section-pulse {
+  0%   { box-shadow: inset 0 0  60px  0px rgba(var(--atmo-r, 61), var(--atmo-g, 191), var(--atmo-b, 163), 0.000); }
+  22%  { box-shadow: inset 0 0 140px 20px rgba(var(--atmo-r, 61), var(--atmo-g, 191), var(--atmo-b, 163), 0.048); }
+  100% { box-shadow: inset 0 0  60px  0px rgba(var(--atmo-r, 61), var(--atmo-g, 191), var(--atmo-b, 163), 0.000); }
+}
+
+section[id] { position: relative; } /* required for section-lit ::before baseline */
+
+.section-lit {
+  animation: section-pulse 1.8s var(--ease-enter) forwards;
+}
+
+/*
+ * Unified micro-feedback — the three channels that fire from one gesture:
+ *
+ *  1. GLOW  → .tap-glow: an ambient-tinted pulse at the pointer, spawned by
+ *             InteractionField. Colour comes from --atmo-r/g/b (the active
+ *             section's light), so feedback is context-aware.
+ *  2. MOTION→ press-scale on :active for interactive elements.
+ *  3. SOUND → existing data-sound tone (SoundController).
+ */
+.tap-glow {
+  position: fixed;
+  z-index: var(--z-tap);
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;        /* centre on pointer coords */
+  border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(var(--atmo-r, 61), var(--atmo-g, 191), var(--atmo-b, 163), 0.50) 0%,
+    rgba(var(--atmo-r, 61), var(--atmo-g, 191), var(--atmo-b, 163), 0.18) 40%,
+    transparent 70%
+  );
+  will-change: transform, opacity;
+  animation: tap-pulse 540ms var(--ease-enter) forwards;
+}
+@keyframes tap-pulse {
+  0%   { transform: scale(0.5); opacity: 0; }
+  16%  { opacity: 0.9; }
+  100% { transform: scale(7.5); opacity: 0; }
+}
+
+/* Press motion — tactile scale on interactive surfaces. CTAs already carry a
+   transform transition (transition-all), so the press eases; lighter controls
+   snap, which reads as crisp. */
+[data-sound]:active {
+  transform: scale(0.97);
+}
+
+/*
+ * Attention light — a soft warm halo on the primary action. The CTA is the one
+ * place light is allowed to actively guide the eye: a brass-tinted glow that
+ * blooms gently on hover/focus, hugging the button (negative spread keeps it
+ * subtle, never a harsh ring). Content uses ambient (cool) light; the action
+ * uses warm light — a consistent rule that always points to "act here".
+ */
+.glow-cta {
+  transition: box-shadow var(--dur-md) var(--ease-io),
+              filter var(--dur-md) var(--ease-io);
+}
+.glow-cta:hover,
+.glow-cta:focus-visible {
+  box-shadow: 0 8px 30px -10px rgba(201, 168, 76, 0.55);
+}
+
+/* ── Reduced-motion overrides ────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .depth-vignette { display: none; }
+  .atmo-orb { display: none; }
+  .section-lit { animation: none; }
+  .tap-glow { display: none; }
+  [data-sound]:active { transform: none; }
+  .glow-cta { transition: none; } /* glow still appears, just not animated */
+}
