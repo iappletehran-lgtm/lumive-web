@@ -1,5 +1,4 @@
 import { Reveal } from "../Reveal";
-import { PlaceholderTag } from "../Placeholder";
 import { CTAButton } from "../CTA";
 import { Reassurance } from "../Reassurance";
 
@@ -8,19 +7,18 @@ export function Founder() {
     <section id="founder" className="bg-white">
       <div className="mx-auto max-w-container px-5 py-24 lg:px-8">
         <div className="grid items-center gap-12 lg:grid-cols-[0.8fr_1.2fr]">
-          {/* portrait placeholder */}
+          {/* portrait */}
           <Reveal>
             <div className="relative">
-              <div className="aspect-[4/5] overflow-hidden rounded-[20px] border border-cloud/70 bg-gradient-to-br from-sapphire/12 via-slate-indigo/10 to-teal/12">
-                <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/60 text-2xl text-sapphire/40">
-                    ◷
-                  </span>
-                  <span className="font-mono text-xs uppercase tracking-wide text-steel/70">
-                    Founder portrait
-                  </span>
-                  <PlaceholderTag>brand-style photo</PlaceholderTag>
-                </div>
+              <div className="aspect-[4/5] overflow-hidden rounded-[20px] border border-cloud/70">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/founder.jpg"
+                  alt="Alireza Sharafeddin, Co-Founder of Lumive AI"
+                  className="h-full w-full object-cover object-center"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
             </div>
           </Reveal>
@@ -47,12 +45,17 @@ export function Founder() {
               </p>
 
               <div className="mt-7 flex items-center gap-4 rounded-lg border border-cloud/70 bg-mist/40 p-5">
-                <div className="h-12 w-12 shrink-0 rounded-full bg-sapphire/15" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/founder.jpg"
+                  alt="Alireza Sharafeddin"
+                  className="h-12 w-12 shrink-0 rounded-full object-cover object-center"
+                  loading="lazy"
+                  decoding="async"
+                />
                 <div>
-                  <p className="font-semibold text-sapphire">
-                    [Founder name] <PlaceholderTag>confirm</PlaceholderTag>
-                  </p>
-                  <p className="text-sm text-steel">Co-Founder · [background / credibility]</p>
+                  <p className="font-semibold text-sapphire">Alireza Sharafeddin</p>
+                  <p className="text-sm text-steel">Co-Founder</p>
                 </div>
               </div>
 
