@@ -86,7 +86,7 @@ async function forwardLead(lead: Record<string, string>): Promise<boolean> {
         text: `Name: ${lead.name}\nEmail: ${lead.email}\nCompany: ${lead.company || "—"}\n\n${lead.message || "(no message)"}`,
       }),
     });
-    if (!r.ok) throw new Error(`resend ${r.status}`);
+    if (!r.ok) throw new Error(`resend ${r.status} ${await r.text()}`);
     return true;
   }
 
