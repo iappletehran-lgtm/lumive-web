@@ -1,5 +1,6 @@
 import { Reveal } from "../Reveal";
 import { CTAButton } from "../CTA";
+import { BOOKING_URL } from "@/lib/contact";
 
 const PHASES = [
   {
@@ -84,7 +85,7 @@ export function Framework() {
               <span className="font-semibold text-mist">The handover guarantee.</span> Our
               definition of success is your team running this without us. We stay until they can.
             </p>
-            <CTAButton variant="primary" href="#book" className="shrink-0">
+            <CTAButton variant="primary" href={BOOKING_URL} className="shrink-0">
               Start with a diagnostic
             </CTAButton>
           </div>

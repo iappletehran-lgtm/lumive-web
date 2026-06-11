@@ -1,6 +1,7 @@
 import { Reveal } from "../Reveal";
 import { CTAButton } from "../CTA";
 import { Reassurance } from "../Reassurance";
+import { BOOKING_URL } from "@/lib/contact";
 
 export function Founder() {
   return (
@@ -60,7 +61,7 @@ export function Founder() {
               </div>
 
               <div className="mt-8">
-                <CTAButton variant="primary" href="#book">
+                <CTAButton variant="primary" href={BOOKING_URL}>
                   Book a 30-minute call
                 </CTAButton>
                 <Reassurance

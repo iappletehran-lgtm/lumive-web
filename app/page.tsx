@@ -13,15 +13,11 @@ import { Founder } from "@/components/sections/Founder";
 import { Contact } from "@/components/sections/Contact";
 import { FinalCTA } from "@/components/sections/FinalCTA";
 import { Footer } from "@/components/sections/Footer";
+import { BOOKING_URL } from "@/lib/contact";
 
 export default function Home() {
   return (
     <>
-      {/* prototype ribbon */}
-      <div className="fixed bottom-4 left-4 z-[60] hidden rounded-full border border-brass/40 bg-midnight/90 px-3.5 py-1.5 font-mono text-[11px] text-brass shadow-lg backdrop-blur md:block">
-        ● Prototype · placeholder content
-      </div>
-
       <ScrollProgress />
       <Navbar />
       <main>
@@ -42,7 +38,9 @@ export default function Home() {
 
       {/* sticky mobile CTA */}
       <a
-        href="#book"
+        href={BOOKING_URL}
+        target="_blank"
+        rel="noopener noreferrer"
         data-sound="cta"
         className="glow-cta fixed inset-x-4 bottom-4 z-50 flex items-center justify-center rounded-md bg-brass px-6 py-3.5 text-center font-semibold text-midnight shadow-lg lg:hidden"
       >

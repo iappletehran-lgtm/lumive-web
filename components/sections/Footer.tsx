@@ -1,5 +1,4 @@
 import { Logo } from "../Logo";
-import { PlaceholderTag } from "../Placeholder";
 import { ChannelButtons } from "../Channels";
 import { Socials } from "../Socials";
 
@@ -78,7 +77,7 @@ export function Footer() {
 
         <div className="mt-14 flex flex-col items-start justify-between gap-5 border-t border-white/10 pt-7 sm:flex-row sm:items-center">
           <p className="text-sm text-cloud/55">
-            © {new Date().getFullYear()} Lumive AI. <PlaceholderTag>contact + legal</PlaceholderTag>
+            © {new Date().getFullYear()} Lumive AI.
           </p>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <div className="flex items-center gap-3">

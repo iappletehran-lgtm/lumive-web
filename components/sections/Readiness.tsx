@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { PrismMark } from "../Logo";
-import { PlaceholderTag } from "../Placeholder";
 import { CTAButton } from "../CTA";
 import { Reassurance } from "../Reassurance";
+import { BOOKING_URL } from "@/lib/contact";
 
 const QUESTIONS = [
   {
@@ -96,10 +96,6 @@ export function Readiness() {
                 )
               )}
             </ul>
-            <p className="mt-6 text-sm text-steel/70">
-              <PlaceholderTag>demo logic</PlaceholderTag>{" "}
-              Final version scores with AI and emails a fuller readiness guide.
-            </p>
           </div>
 
           {/* interactive card */}
@@ -153,7 +149,7 @@ export function Readiness() {
                   {result!.step}
                 </p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <CTAButton variant="primary" href="#book" className="flex-1">
+                  <CTAButton variant="primary" href={BOOKING_URL} className="flex-1">
                     Book a 30-minute call
                   </CTAButton>
                   <CTAButton variant="secondary" onClick={reset}>

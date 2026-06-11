@@ -157,6 +157,17 @@ body {
   transform-origin: 0 50%;
 }
 
+/* Flowing connector lines in the hero operational-flow visual — a calm,
+   continuous "work moving through the system" motion (no data, no numbers). */
+@keyframes flow-dash { to { stroke-dashoffset: -24; } }
+.flow-line {
+  stroke-dasharray: 3 7;
+  animation: flow-dash 1.4s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow-line { animation: none; }
+}
+
 /* Continuous section seams — dark panels EMERGE from the light canvas: their
    vertical edges fade transparent so the Mist body shows through and blends
    into the light sections above/below, instead of a hard colour cut. This is

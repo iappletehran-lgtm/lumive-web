@@ -1,6 +1,7 @@
 import { Reveal } from "../Reveal";
 import { CTAButton } from "../CTA";
 import { ParallaxLayer } from "../ParallaxLayer";
+import { BOOKING_URL } from "@/lib/contact";
 
 const SERVICES = [
   {
@@ -77,7 +78,7 @@ export function Services() {
                 We design and build working AI systems — only what earns its place.
               </h2>
             </div>
-            <CTAButton variant="tertiary" href="#book" withArrow className="shrink-0 text-base">
+            <CTAButton variant="tertiary" href={BOOKING_URL} withArrow className="shrink-0 text-base">
               Discuss your use case
             </CTAButton>
           </div>

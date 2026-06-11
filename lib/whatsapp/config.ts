@@ -13,13 +13,15 @@
  *   BOOKING_URL               – scheduling link the agent shares with hot leads
  *   ANTHROPIC_API_KEY / OPENAI_API_KEY – the LLM brain (shared with web chat)
  */
+import { BOOKING_URL } from "@/lib/contact";
+
 export const WA = {
   verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || "",
   token: process.env.WHATSAPP_TOKEN || "",
   phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || "",
   appSecret: process.env.WHATSAPP_APP_SECRET || "",
   graphVersion: process.env.WHATSAPP_GRAPH_VERSION || "v21.0",
-  bookingUrl: process.env.BOOKING_URL || "https://lumive.ai/#book",
+  bookingUrl: process.env.BOOKING_URL || BOOKING_URL, // shares the site's Cal.com link
 } as const;
 
 /** True when we can actually send replies via the Cloud API. */

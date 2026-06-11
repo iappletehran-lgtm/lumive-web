@@ -4,7 +4,7 @@ import { Footer } from "@/components/sections/Footer";
 import { Reveal } from "@/components/Reveal";
 import { LumiveMark } from "@/components/Logo";
 import { ChannelButtons } from "@/components/Channels";
-import { PlaceholderTag } from "@/components/Placeholder";
+import { BOOKING_URL } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Lumive Lab — Experience AI in action",
@@ -88,12 +88,12 @@ export default function LabPage() {
                   <a href="#access" data-sound="lab" className="focus-brand glow-cta inline-flex items-center justify-center rounded-md bg-brass px-7 py-3.5 text-base font-semibold text-midnight shadow-md transition-all hover:brightness-95">
                     Request early access
                   </a>
-                  <a href="/#book" data-sound="cta" className="focus-brand inline-flex items-center justify-center gap-2 rounded-md border border-mist/25 px-7 py-3.5 text-base font-semibold text-mist transition-colors hover:bg-white/10">
+                  <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" data-sound="cta" className="focus-brand inline-flex items-center justify-center gap-2 rounded-md border border-mist/25 px-7 py-3.5 text-base font-semibold text-mist transition-colors hover:bg-white/10">
                     Book a 30-minute call
                   </a>
                 </div>
                 <p className="mt-4 text-sm text-cloud/60">
-                  Experiences are in active development. <PlaceholderTag>launching soon</PlaceholderTag>
+                  Experiences are in active development.
                 </p>
               </Reveal>
             </div>
@@ -117,9 +117,6 @@ export default function LabPage() {
                     <p className="text-lumive-light">workflow: 3 steps automated · 0 errors</p>
                     <p className="text-cloud/50">→ ready for input_</p>
                   </div>
-                </div>
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2">
-                  <PlaceholderTag>illustrative preview</PlaceholderTag>
                 </div>
               </div>
             </Reveal>
@@ -212,7 +209,7 @@ export default function LabPage() {
                     <a href="/#framework" className="focus-brand inline-flex items-center justify-center rounded-md border border-sapphire/25 px-6 py-3.5 font-semibold text-sapphire transition-colors hover:bg-white">
                       See the 90-day process
                     </a>
-                    <a href="/#book" className="focus-brand glow-cta inline-flex items-center justify-center rounded-md bg-brass px-6 py-3.5 font-semibold text-midnight transition-all hover:brightness-95">
+                    <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" className="focus-brand glow-cta inline-flex items-center justify-center rounded-md bg-brass px-6 py-3.5 font-semibold text-midnight transition-all hover:brightness-95">
                       Book a 30-minute call
                     </a>
                   </div>
@@ -245,9 +242,6 @@ export default function LabPage() {
                   Request access
                 </button>
               </form>
-              <p className="mt-3 text-xs text-cloud/60">
-                <PlaceholderTag>wire to CRM / email list</PlaceholderTag>
-              </p>
 
               <div className="mt-8 flex flex-col items-center gap-3">
                 <p className="text-sm text-cloud/70">Prefer to talk it through?</p>

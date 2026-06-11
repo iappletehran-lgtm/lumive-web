@@ -16,6 +16,12 @@ export const CONTACT = {
   email: "hello@lumive.ai", // ⚠️ PLACEHOLDER
 } as const;
 
+/**
+ * Public scheduling page (Cal.com). Every "Book a 30-minute call" CTA links
+ * here and opens it in a new tab — the single source for the booking flow.
+ */
+export const BOOKING_URL = "https://cal.com/lumive-30min";
+
 
 /** Official social profiles. Handle is @lumiveai across platforms (brand rule). PLACEHOLDER URLs. */
 export const SOCIALS = {

@@ -72,8 +72,11 @@ export function CTAButton({
   ) : null;
 
   if (href) {
+    // External links (e.g. the Cal.com booking page) open in a new tab.
+    const external = /^https?:\/\//.test(href);
+    const ext = external ? { target: "_blank", rel: "noopener noreferrer" } : {};
     return (
-      <a href={href} data-sound={SOUND[variant]} className={cls}>
+      <a href={href} data-sound={SOUND[variant]} className={cls} {...ext}>
         {children}
         {arrow}
       </a>

@@ -2,6 +2,7 @@ import { Reveal } from "../Reveal";
 import { PrismMark } from "../Logo";
 import { CTAButton } from "../CTA";
 import { Reassurance, FoundingNote } from "../Reassurance";
+import { BOOKING_URL } from "@/lib/contact";
 
 export function FinalCTA() {
   return (
@@ -19,7 +20,7 @@ export function FinalCTA() {
             business right now — and what the first step looks like.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <CTAButton variant="primary" size="lg" href="#book">
+            <CTAButton variant="primary" size="lg" href={BOOKING_URL}>
               Book a 30-minute call
             </CTAButton>
             <CTAButton variant="secondary" size="lg" tone="dark" href="#readiness">

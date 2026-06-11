@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 import { SoundToggle } from "./SoundToggle";
 import { startSync, subscribeSync } from "@/lib/sync";
+import { BOOKING_URL } from "@/lib/contact";
 
 const LINKS = [
   { label: "Services", href: "/#services" },
@@ -57,7 +58,9 @@ export function Navbar() {
           ))}
           <SoundToggle />
           <a
-            href="/#book"
+            href={BOOKING_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             data-sound="cta"
             className="focus-brand glow-cta rounded-md bg-brass px-5 py-2.5 text-[15px] font-semibold text-midnight shadow-sm transition-all duration-200 ease-brand hover:brightness-95"
           >
@@ -96,7 +99,9 @@ export function Navbar() {
               </a>
             ))}
             <a
-              href="/#book"
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               data-sound="cta"
               onClick={() => setOpen(false)}
               className="glow-cta mt-2 rounded-md bg-brass px-5 py-3 text-center text-base font-semibold text-midnight"
