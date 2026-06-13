@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Lora, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { ChatWidget } from "@/components/assistant/ChatWidget";
+import { LumiWidget } from "@/components/assistant/LumiWidget";
 import { ExperienceLayer } from "@/components/system/ExperienceLayer";
 import { SoundController } from "@/components/system/SoundController";
 
@@ -41,7 +41,7 @@ export default function RootLayout({
         {/* Sound: global [data-sound] click delegation (silent until user opts in) */}
         <SoundController />
         {children}
-        <ChatWidget />
+        <LumiWidget />
       </body>
     </html>
   );

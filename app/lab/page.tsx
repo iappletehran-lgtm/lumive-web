@@ -4,6 +4,7 @@ import { Footer } from "@/components/sections/Footer";
 import { Reveal } from "@/components/Reveal";
 import { LumiveMark } from "@/components/Logo";
 import { ChannelButtons } from "@/components/Channels";
+import { LumiveGameMount } from "@/components/lab/LumiveGameMount";
 import { BOOKING_URL } from "@/lib/contact";
 
 export const metadata: Metadata = {
@@ -59,6 +60,56 @@ export default function LabPage() {
     <>
       <Navbar />
       <main>
+        {/* LUMIVE GAME — live AI interaction demo (added at the top) */}
+        <section className="relative overflow-hidden bg-midnight pt-[72px]">
+          <div className="mesh pointer-events-none absolute inset-0 opacity-40" aria-hidden />
+          <div className="pointer-events-none absolute -left-24 top-24 h-[360px] w-[360px] rounded-full bg-[#7C3AED]/12 blur-3xl" aria-hidden />
+          <div className="relative mx-auto max-w-container px-5 py-16 lg:px-8 lg:py-20">
+            <Reveal>
+              <div className="mx-auto max-w-xl text-center">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 font-mono text-[12px] font-medium uppercase tracking-wide text-lumive-light">
+                  <span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-lumive-light" />
+                  Live demo
+                </span>
+                <h1 className="mt-6 text-[clamp(2.25rem,5vw,3.5rem)] font-bold leading-[1.05] tracking-tight text-mist">
+                  Lumive Lab
+                </h1>
+                <p className="mt-3 text-lg font-medium text-lumive-light">
+                  A live demonstration of AI interaction
+                </p>
+                <p className="mx-auto mt-6 max-w-md text-[15px] leading-relaxed text-cloud/75">
+                  LUMI is an AI companion that learns from how you interact with it. This is a real
+                  example of what we build for our clients — not a scripted demo.
+                </p>
+                <ul className="mx-auto mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-mono text-[12px] uppercase tracking-wide text-cloud/60">
+                  <li className="flex items-center gap-2"><span className="h-1 w-1 rounded-full bg-lumive-light" /> Talk to it</li>
+                  <li className="flex items-center gap-2"><span className="h-1 w-1 rounded-full bg-teal" /> Complete missions</li>
+                  <li className="flex items-center gap-2"><span className="h-1 w-1 rounded-full bg-brass" /> Watch it change</li>
+                </ul>
+              </div>
+            </Reveal>
+
+            <Reveal delay={120}>
+              <div className="mx-auto mt-12 w-full max-w-[440px]">
+                <LumiveGameMount />
+              </div>
+            </Reveal>
+
+            <Reveal delay={180}>
+              <p className="mx-auto mt-8 max-w-md text-center text-sm text-cloud/55">
+                Want an AI like this for your business?{" "}
+                <a
+                  href="/book"
+                  data-sound="cta"
+                  className="focus-brand rounded font-medium text-lumive-light underline-offset-2 transition-colors hover:text-mist hover:underline"
+                >
+                  Book a strategy call →
+                </a>
+              </p>
+            </Reveal>
+          </div>
+        </section>
+
         {/* HERO */}
         <section className="relative overflow-hidden bg-midnight pt-[72px]">
           <div className="mesh pointer-events-none absolute inset-0 opacity-50" aria-hidden />
