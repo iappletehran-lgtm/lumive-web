@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PrismMark } from "../Logo";
 import { CTAButton } from "../CTA";
 import { Reassurance } from "../Reassurance";
-import { BOOKING_URL } from "@/lib/contact";
+import { BOOK_URL } from "@/lib/contact";
 
 const QUESTIONS = [
   {
@@ -149,8 +149,8 @@ export function Readiness() {
                   {result!.step}
                 </p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <CTAButton variant="primary" href={BOOKING_URL} className="flex-1">
-                    Book a 30-minute call
+                  <CTAButton variant="primary" href={BOOK_URL} className="flex-1">
+                    Book a Call
                   </CTAButton>
                   <CTAButton variant="secondary" onClick={reset}>
                     Start over

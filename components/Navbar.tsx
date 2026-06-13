@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 import { SoundToggle } from "./SoundToggle";
 import { startSync, subscribeSync } from "@/lib/sync";
-import { BOOKING_URL } from "@/lib/contact";
+import { BOOK_URL } from "@/lib/contact";
 
 const LINKS = [
   { label: "Services", href: "/#services" },
@@ -58,13 +58,18 @@ export function Navbar() {
           ))}
           <SoundToggle />
           <a
-            href={BOOKING_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/login"
+            data-sound="nav"
+            className="focus-brand rounded text-[15px] font-medium text-midnight/80 transition-colors hover:text-sapphire"
+          >
+            Login
+          </a>
+          <a
+            href={BOOK_URL}
             data-sound="cta"
             className="focus-brand glow-cta rounded-md bg-brass px-5 py-2.5 text-[15px] font-semibold text-midnight shadow-sm transition-all duration-200 ease-brand hover:brightness-95"
           >
-            Book a 30-minute call
+            Book a Call
           </a>
         </div>
 
@@ -99,14 +104,20 @@ export function Navbar() {
               </a>
             ))}
             <a
-              href={BOOKING_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/login"
+              data-sound="nav"
+              onClick={() => setOpen(false)}
+              className="rounded-md px-3 py-3 text-base font-medium text-midnight/85 hover:bg-white"
+            >
+              Login
+            </a>
+            <a
+              href={BOOK_URL}
               data-sound="cta"
               onClick={() => setOpen(false)}
               className="glow-cta mt-2 rounded-md bg-brass px-5 py-3 text-center text-base font-semibold text-midnight"
             >
-              Book a 30-minute call
+              Book a Call
             </a>
             <div className="mt-3 flex items-center justify-between border-t border-cloud/60 px-3 pt-3">
               <span className="text-sm font-medium text-steel">Interface sounds</span>

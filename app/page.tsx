@@ -13,7 +13,7 @@ import { Founder } from "@/components/sections/Founder";
 import { Contact } from "@/components/sections/Contact";
 import { FinalCTA } from "@/components/sections/FinalCTA";
 import { Footer } from "@/components/sections/Footer";
-import { BOOKING_URL } from "@/lib/contact";
+import { BOOK_URL } from "@/lib/contact";
 
 export default function Home() {
   return (
@@ -38,13 +38,11 @@ export default function Home() {
 
       {/* sticky mobile CTA */}
       <a
-        href={BOOKING_URL}
-        target="_blank"
-        rel="noopener noreferrer"
+        href={BOOK_URL}
         data-sound="cta"
         className="glow-cta fixed inset-x-4 bottom-4 z-50 flex items-center justify-center rounded-md bg-brass px-6 py-3.5 text-center font-semibold text-midnight shadow-lg lg:hidden"
       >
-        Book a 30-minute call
+        Book a Call
       </a>
     </>
   );

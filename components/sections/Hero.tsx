@@ -5,7 +5,7 @@ import { CTAButton } from "../CTA";
 import { Reassurance } from "../Reassurance";
 import { ParallaxLayer } from "../ParallaxLayer";
 import { palette } from "@/lib/brand";
-import { BOOKING_URL } from "@/lib/contact";
+import { BOOK_URL } from "@/lib/contact";
 
 export function Hero() {
   return (
@@ -47,8 +47,8 @@ export function Hero() {
 
           <Reveal delay={240}>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <CTAButton variant="primary" href={BOOKING_URL}>
-                Book a 30-minute call
+              <CTAButton variant="primary" href={BOOK_URL}>
+                Book a Call
               </CTAButton>
               <CTAButton variant="secondary" href="#framework" withArrow>
                 See how the 90 days works
@@ -58,6 +58,12 @@ export function Hero() {
               className="mt-4"
               items={["No pitch", "No obligation", "We tell you if it isn't a fit"]}
             />
+            <p className="mt-4 text-sm text-steel">
+              Already a client?{" "}
+              <a href="/login" data-sound="nav" className="focus-brand rounded font-medium text-sapphire underline-offset-2 hover:text-teal hover:underline">
+                Login
+              </a>
+            </p>
           </Reveal>
 
           {/* stat strip */}

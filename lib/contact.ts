@@ -22,6 +22,13 @@ export const CONTACT = {
  */
 export const BOOKING_URL = "https://cal.com/lumive-30min";
 
+/**
+ * On-site paid consultation funnel (the /book page — $50 USDT strategy call).
+ * Internal route, so it navigates in the same tab. Marketing CTAs point here;
+ * the free intro call (BOOKING_URL, Cal.com) stays on the contact/assistant flows.
+ */
+export const BOOK_URL = "/book";
+
 
 /** Official social profiles. Handle is @lumiveai across platforms (brand rule). PLACEHOLDER URLs. */
 export const SOCIALS = {
