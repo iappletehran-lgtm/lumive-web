@@ -66,7 +66,7 @@ export function Founder() {
                 </CTAButton>
                 <Reassurance
                   className="mt-4"
-                  items={["Direct with the founder", "No obligation", "Reply within one business day"]}
+                  items={["Direct with the founder", "Reply within one business day"]}
                 />
               </div>
             </div>

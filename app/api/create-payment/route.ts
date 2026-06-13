@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PAYMENT, type PaymentStatus } from "@/lib/booking";
+import { PAYMENT, BUSINESS_TZ, formatSlot, type PaymentStatus } from "@/lib/booking";
 import { createPayment, mapStatus } from "@/lib/nowpayments";
 
 export const runtime = "nodejs";
@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 interface Body {
   full_name?: string;
   email?: string;
-  preferred_times?: string;
+  selected_slot?: string; // ISO datetime the visitor picked
   website?: string; // honeypot
 }
 
@@ -26,9 +26,10 @@ function ipnCallbackUrl(): string | undefined {
 
 /**
  * Opens a NOWPayments USDT-TRC20 invoice for the consultation, records the
- * booking (status 'waiting') via the service-role client, and returns the
- * pay address / amount / a QR data-URL for the payment step. If NOWPayments is
- * unreachable it degrades to the static wallet so the payer is never blocked.
+ * booking (status 'waiting') with the chosen slot via the service-role client,
+ * and returns the pay address / amount / a QR data-URL for the payment step. If
+ * NOWPayments is unreachable it degrades to the static wallet so the payer is
+ * never blocked. The Cal.com booking is created later by the webhook on confirm.
  */
 export async function POST(req: NextRequest) {
   let body: Body;
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   const full_name = (body.full_name ?? "").trim();
   const email = (body.email ?? "").trim();
-  const preferred_times = (body.preferred_times ?? "").trim();
+  const selectedSlot = (body.selected_slot ?? "").trim();
 
   if (!full_name || !EMAIL_RE.test(email)) {
     return NextResponse.json(
@@ -51,6 +52,15 @@ export async function POST(req: NextRequest) {
       { status: 422 }
     );
   }
+
+  const slotDate = selectedSlot ? new Date(selectedSlot) : null;
+  if (!slotDate || isNaN(slotDate.getTime()) || slotDate.getTime() < Date.now()) {
+    return NextResponse.json(
+      { ok: false, error: "Please pick a valid time slot." },
+      { status: 422 }
+    );
+  }
+  const slotISO = slotDate.toISOString();
 
   const orderId = crypto.randomUUID();
 
@@ -67,7 +77,7 @@ export async function POST(req: NextRequest) {
       priceUsd: PAYMENT.priceUsd,
       payCurrency: PAYMENT.payCurrency,
       orderId,
-      orderDescription: `Lumive AI — ${PAYMENT.offer}`,
+      orderDescription: `Lumive AI — ${PAYMENT.offer} @ ${formatSlot(slotISO, BUSINESS_TZ)}`,
       ipnCallbackUrl: ipnCallbackUrl(),
     });
     if (np) {
@@ -92,14 +102,14 @@ export async function POST(req: NextRequest) {
     };
   }
 
-  // 2) Record the booking. Non-fatal: a DB hiccup must not block a paying user;
-  // the webhook/poll reconcile by payment_id, and we log loudly if it fails.
+  // 2) Record the booking with the chosen slot. Non-fatal: a DB hiccup must not
+  // block a paying user; the webhook/poll reconcile by payment_id.
   try {
     const admin = createAdminClient();
     const { error } = await admin.from("bookings").insert({
       full_name,
       email,
-      preferred_times,
+      selected_slot: slotISO,
       payment_id: payment.payment_id,
       payment_status: payment.payment_status,
     });
@@ -122,6 +132,7 @@ export async function POST(req: NextRequest) {
       qr,
       network: PAYMENT.network,
       amount_usd: String(PAYMENT.priceUsd),
+      selected_slot: slotISO,
     },
   });
 }

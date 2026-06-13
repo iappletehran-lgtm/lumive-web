@@ -7,7 +7,7 @@ import { PAYMENT } from "@/lib/booking";
 export const metadata: Metadata = {
   title: "Book a Strategy Call — Lumive AI",
   description:
-    "Pay $50 USDT (TRC20) to book a 90-minute AI implementation consultation. Payment is verified automatically and your booking link arrives by email within minutes.",
+    "Pick a time for a 30-minute AI strategy call with Lumive AI. Payment is verified automatically and your meeting link arrives by email within minutes.",
 };
 
 const TRUST = [
@@ -42,16 +42,14 @@ export default function BookPage() {
           <Logo />
         </Link>
 
-        {/* Header */}
+        {/* Header — no price here; it appears on the payment step */}
         <header className="text-center">
           <h1 className="text-3xl font-bold leading-[1.1] tracking-tight text-sapphire sm:text-4xl">
-            Book a Strategy Call —{" "}
-            <span className="gradient-text">
-              ${PAYMENT.priceUsd} {PAYMENT.currency}
-            </span>
+            Book a <span className="gradient-text">Strategy Call.</span>
           </h1>
           <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-steel sm:text-base">
-            Payment is verified automatically. Your booking link arrives within minutes.
+            Pick a time that works for you. Payment is the last step, verified automatically — your
+            meeting link arrives within minutes.
           </p>
         </header>
 
@@ -79,7 +77,7 @@ export default function BookPage() {
             {PAYMENT.offer}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-steel">
-            Tell us who you are and a few times that suit you, then pay in USDT to lock it in.
+            Pick a time, add your details, and confirm. Payment is the final step.
           </p>
           <div className="mt-6">
             <BookFlow />

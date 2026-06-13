@@ -158,7 +158,7 @@ export function Readiness() {
                 </div>
                 <Reassurance
                   className="mt-4"
-                  items={["No email needed for this", "No obligation", "30 minutes"]}
+                  items={["Pick a time that suits you", "30 minutes"]}
                 />
               </div>
             )}

@@ -61,7 +61,7 @@ export async function resendBookingEmail(formData: FormData) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("bookings")
-    .select("email, full_name, booking_link")
+    .select("email, full_name, booking_link, selected_slot")
     .eq("id", id)
     .maybeSingle();
 

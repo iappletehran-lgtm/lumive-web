@@ -56,7 +56,7 @@ export function Hero() {
             </div>
             <Reassurance
               className="mt-4"
-              items={["No pitch", "No obligation", "We tell you if it isn't a fit"]}
+              items={["Pick a time that suits you", "We tell you if it isn't a fit"]}
             />
             <p className="mt-4 text-sm text-steel">
               Already a client?{" "}

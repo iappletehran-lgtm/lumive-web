@@ -30,7 +30,7 @@ export function FinalCTA() {
           <Reassurance
             tone="dark"
             className="mt-6 justify-center"
-            items={["30 minutes", "No pitch", "No obligation"]}
+            items={["30 minutes", "Pick your time", "Honest answer"]}
           />
           <div className="mt-7 flex justify-center">
             <FoundingNote tone="dark" />

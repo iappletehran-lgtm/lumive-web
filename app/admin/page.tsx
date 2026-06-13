@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { promoteToClient, saveBookingLink, resendBookingEmail } from "./actions";
-import { STATUS_LABEL, type PaymentStatus } from "@/lib/booking";
+import { STATUS_LABEL, BUSINESS_TZ, formatSlot, type PaymentStatus } from "@/lib/booking";
 import type { Role } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ type Booking = {
   id: string;
   full_name: string | null;
   email: string | null;
-  preferred_times: string | null;
+  selected_slot: string | null;
   payment_id: string | null;
   payment_status: PaymentStatus;
   booking_link: string | null;
@@ -59,7 +59,7 @@ export default async function AdminPage() {
       .order("created_at", { ascending: false }),
     admin
       .from("bookings")
-      .select("id, full_name, email, preferred_times, payment_id, payment_status, booking_link, created_at")
+      .select("id, full_name, email, selected_slot, payment_id, payment_status, booking_link, created_at")
       .order("created_at", { ascending: false }),
   ]);
 
@@ -220,10 +220,10 @@ function BookingCard({ booking: b }: { booking: Booking }) {
         </div>
         <div>
           <dt className="font-mono text-[10px] uppercase tracking-wide text-steel/60">
-            Preferred times
+            Session ({BUSINESS_TZ.replace(/_/g, " ")})
           </dt>
-          <dd className="mt-1 whitespace-pre-line text-sm leading-relaxed text-steel">
-            {b.preferred_times || <span className="text-steel/40">—</span>}
+          <dd className="mt-1 text-sm font-medium leading-relaxed text-midnight">
+            {b.selected_slot ? formatSlot(b.selected_slot, BUSINESS_TZ) : <span className="font-normal text-steel/40">—</span>}
           </dd>
         </div>
       </dl>
