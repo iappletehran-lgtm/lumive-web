@@ -9,8 +9,8 @@
  * matter which caller observes the transition first.
  */
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendEmail } from "@/lib/email";
-import { PAYMENT, BUSINESS_TZ, formatSlot, type PaymentStatus } from "@/lib/booking";
+import { sendBookingConfirmation } from "@/lib/email";
+import { BUSINESS_TZ, type PaymentStatus } from "@/lib/booking";
 import { createBooking } from "@/lib/cal";
 
 type BookingRow = {
@@ -21,27 +21,18 @@ type BookingRow = {
   selected_slot?: string | null;
 };
 
-/** Email the payer their confirmed meeting (time + join link). */
+/** Email the payer their confirmed meeting (time + join link). Never throws. */
 export async function sendBookingEmail(b: BookingRow): Promise<void> {
   if (!b?.email) return;
-  const link = b.booking_link || null;
-  const firstName = (b.full_name || "").trim().split(/\s+/)[0] || "there";
-  const when = b.selected_slot ? formatSlot(b.selected_slot, BUSINESS_TZ) : null;
-
   try {
-    await sendEmail({
-      to: b.email,
-      subject: "Your Lumive AI strategy call — confirmed",
-      text:
-        `Hi ${firstName},\n\n` +
-        `Thanks for your payment. Your ${PAYMENT.offer} is confirmed.\n\n` +
-        (when ? `When: ${when} (Istanbul time — your calendar invite shows your local time)\n\n` : "") +
-        (link ? `Join here:\n${link}\n\n` : "") +
-        `If you need to reschedule, reply to this email and we will sort it.\n\n` +
-        `— Lumive AI`,
+    await sendBookingConfirmation({
+      email: b.email,
+      name: b.full_name,
+      selectedSlot: b.selected_slot,
+      bookingLink: b.booking_link,
     });
   } catch (err) {
-    console.error("[bookings] email failed:", (err as Error).message);
+    console.error("[bookings] confirmation email failed:", (err as Error).message);
   }
 }
 

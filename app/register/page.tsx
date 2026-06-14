@@ -42,6 +42,13 @@ export default function RegisterPage() {
       return;
     }
 
+    // Fire the welcome email server-side (fire-and-forget; never blocks the UX).
+    fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ full_name: fullName, email: emailValue }),
+    }).catch(() => {});
+
     setEmail(emailValue);
     setStatus("done");
   }

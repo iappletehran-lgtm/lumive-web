@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendBookingEmail } from "@/lib/booking-store";
+import { sendClientPromotion } from "@/lib/email";
 
 /**
  * Promote a prospect to client. Guarded by requireRole("admin") so only an admin
@@ -18,11 +19,28 @@ export async function promoteToClient(formData: FormData) {
   if (!id) return;
 
   const admin = createAdminClient();
-  await admin
+  // .select() returns the row only if it was actually a prospect → email once.
+  const { data: promoted } = await admin
     .from("profiles")
     .update({ role: "client" })
     .eq("id", id)
-    .eq("role", "prospect");
+    .eq("role", "prospect")
+    .select("id, full_name");
+
+  if (promoted && promoted.length) {
+    // profiles has no email — pull it from auth.users via the admin API.
+    const { data: u } = await admin.auth.admin.getUserById(id);
+    const email = u?.user?.email;
+    const name =
+      promoted[0].full_name || (u?.user?.user_metadata?.full_name as string | undefined) || null;
+    if (email) {
+      try {
+        await sendClientPromotion({ email, name });
+      } catch (err) {
+        console.error("[admin] promotion email failed:", (err as Error).message);
+      }
+    }
+  }
 
   revalidatePath("/admin");
 }

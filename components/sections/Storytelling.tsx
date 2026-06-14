@@ -18,6 +18,13 @@ export function Storytelling() {
   const [active, setActive] = useState(0);
   const sceneRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  // Rail reveal: staggered slide-in + a brief teal flash per item the first time
+  // the rail scrolls into view.
+  const [revealed, setRevealed] = useState(false);
+  const [flashing, setFlashing] = useState<Set<number>>(new Set());
+  const railRef = useRef<HTMLUListElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+
   useEffect(() => {
     const reveal = new IntersectionObserver(
       (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add("story-in")),
@@ -42,8 +49,115 @@ export function Storytelling() {
     };
   }, []);
 
+  // Sequential reveal of the journey rail (IntersectionObserver trigger, CSS
+  // transitions). Reduced motion → show everything at once, no flashes.
+  useEffect(() => {
+    const ul = railRef.current;
+    if (!ul) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setRevealed(true);
+      return;
+    }
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        setRevealed(true);
+        RAIL.forEach((_, i) => {
+          timers.push(
+            setTimeout(() => {
+              setFlashing((prev) => new Set(prev).add(i)); // highlight teal
+              timers.push(
+                setTimeout(
+                  () => setFlashing((prev) => {
+                    const next = new Set(prev);
+                    next.delete(i); // then dim back
+                    return next;
+                  }),
+                  450
+                )
+              );
+            }, i * 150)
+          );
+        });
+        io.disconnect();
+      },
+      { threshold: 0.35 }
+    );
+    io.observe(ul);
+    return () => {
+      io.disconnect();
+      timers.forEach(clearTimeout);
+    };
+  }, []);
+
+  // Continuous loop: while the section is in view, sweep the teal highlight down
+  // the rail (01→06, ~600ms each, 150ms gap), wait 5s, repeat. IntersectionObserver
+  // starts it on enter, stops on leave, restarts on re-entry. Reduced motion: off.
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const HOLD = 600; // teal duration per item
+    const GAP = 150; // dark gap between items
+    const STEP = HOLD + GAP; // one-at-a-time slot
+    const SWEEP = RAIL.length * STEP; // full sweep duration
+    const PAUSE = 5000; // wait between sweeps
+
+    let timers: ReturnType<typeof setTimeout>[] = [];
+    let running = false;
+
+    const clearTimers = () => {
+      timers.forEach(clearTimeout);
+      timers = [];
+    };
+
+    const sweep = () => {
+      RAIL.forEach((_, i) => {
+        timers.push(setTimeout(() => setFlashing((p) => new Set(p).add(i)), i * STEP));
+        timers.push(
+          setTimeout(() => setFlashing((p) => {
+            const n = new Set(p);
+            n.delete(i);
+            return n;
+          }), i * STEP + HOLD)
+        );
+      });
+    };
+
+    const cycle = () => {
+      if (!running) return;
+      sweep();
+      timers.push(setTimeout(cycle, SWEEP + PAUSE));
+    };
+
+    const start = () => {
+      if (running) return;
+      running = true;
+      // First sweep after a pause so it never collides with the one-time reveal flash.
+      timers.push(setTimeout(cycle, PAUSE));
+    };
+    const stop = () => {
+      running = false;
+      clearTimers();
+      setFlashing(new Set()); // drop loop highlights (the scroll-active item stays teal)
+    };
+
+    const io = new IntersectionObserver(
+      ([entry]) => (entry.isIntersecting ? start() : stop()),
+      { threshold: 0 }
+    );
+    io.observe(section);
+
+    return () => {
+      io.disconnect();
+      clearTimers();
+    };
+  }, []);
+
   return (
-    <section id="story" className="emerge-midnight relative overflow-hidden text-mist">
+    <section ref={sectionRef} id="story" className="emerge-midnight relative overflow-hidden text-mist">
       <div className="dot-grid-dark pointer-events-none absolute inset-0 opacity-60" aria-hidden />
       <ParallaxLayer speed={0.07} className="pointer-events-none absolute right-0 top-1/4">
         <div className="orb animate-float h-[460px] w-[460px] bg-teal/10" />
@@ -62,11 +176,18 @@ export function Storytelling() {
             <h2 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-mist">
               From friction to a business that runs smarter.
             </h2>
-            <ul className="mt-9 space-y-1">
+            <ul ref={railRef} className="mt-9 space-y-1">
               {RAIL.map((label, i) => {
-                const on = i === active;
+                // Teal when it's the scroll-active item OR mid reveal-flash.
+                const on = i === active || flashing.has(i);
                 return (
-                  <li key={label} className="flex items-center gap-3">
+                  <li
+                    key={label}
+                    className={`flex items-center gap-3 transition-all duration-[400ms] ease-out motion-reduce:!translate-x-0 motion-reduce:!opacity-100 motion-reduce:!transition-none ${
+                      revealed ? "translate-x-0 opacity-100" : "-translate-x-5 opacity-0"
+                    }`}
+                    style={{ transitionDelay: revealed ? `${i * 150}ms` : "0ms" }}
+                  >
                     <span className={`h-px transition-all duration-360 ease-io ${on ? "w-8 bg-lumive-light" : "w-4 bg-white/20"}`} />
                     <span className={`font-mono text-[11px] uppercase tracking-wide transition-colors duration-360 ease-io ${on ? "text-lumive-light" : "text-cloud/45"}`}>
                       {String(i + 1).padStart(2, "0")} · {label}

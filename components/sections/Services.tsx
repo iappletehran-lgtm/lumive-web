@@ -1,6 +1,7 @@
 import { Reveal } from "../Reveal";
 import { CTAButton } from "../CTA";
 import { ParallaxLayer } from "../ParallaxLayer";
+import { ReceptionistFlow } from "./ReceptionistFlow";
 import { BOOKING_URL } from "@/lib/contact";
 
 const SERVICES = [
@@ -122,6 +123,12 @@ export function Services() {
                   <p className={`relative mt-2 leading-relaxed text-steel ${feature ? "text-lg max-w-md" : ""}`}>
                     {s.desc}
                   </p>
+
+                  {feature && (
+                    <div className="relative mt-6">
+                      <ReceptionistFlow />
+                    </div>
+                  )}
 
                   <p className="relative mt-auto flex items-start gap-2 pt-5 text-sm font-medium text-teal">
                     <span aria-hidden className="mt-0.5">→</span>
