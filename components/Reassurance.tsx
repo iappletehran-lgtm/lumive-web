@@ -9,6 +9,10 @@
  *                 founder involvement), never as urgency to "act now".
  */
 
+"use client";
+
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+
 type Tone = "light" | "dark";
 
 const DEFAULT_CUES = ["30 minutes", "No pitch", "No obligation"];
@@ -43,6 +47,7 @@ export function FoundingNote({
   tone?: Tone;
   className?: string;
 }) {
+  const { t } = useLanguage();
   const wrap =
     tone === "dark"
       ? "border-white/15 bg-white/[0.04] text-cloud/85"
@@ -55,7 +60,7 @@ export function FoundingNote({
         <span className="absolute inline-flex h-full w-full animate-pulse-soft rounded-full bg-brass/50" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-brass" />
       </span>
-      <span>Currently onboarding a small group of founding clients — each gets direct founder involvement.</span>
+      <span>{t.contact.foundingNote}</span>
     </div>
   );
 }

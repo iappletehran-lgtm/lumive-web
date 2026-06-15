@@ -2,17 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ParallaxLayer } from "../ParallaxLayer";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
-const SCENES = [
-  { eyebrow: "Scene 01", title: "The work that holds you back.", body: "Manual processes, scattered data, and no time to figure out where AI fits. The cost is quiet, but it compounds every week.", tone: "challenge" },
-  { eyebrow: "Scene 02", title: "Where AI is actually worth it.", body: "Not everywhere. We find the few high-value, low-risk points in how you already work — and we are honest about the rest.", tone: "opportunity" },
-  { eyebrow: "Scene 03", title: "A clear, honest plan.", body: "A prioritised roadmap built around your business — not forty-seven recommendations you will never action.", tone: "roadmap" },
-  { eyebrow: "Scene 04", title: "The repetitive work, handled.", body: "Automated workflows take over the rule-based tasks that move between your tools, quietly and reliably.", tone: "automation" },
-  { eyebrow: "Scene 05", title: "Your operation, running smarter.", body: "Working systems live inside your business — faster responses, fewer errors, better decisions, no new headcount.", tone: "transformation" },
-  { eyebrow: "Scene 06", title: "Built to scale as you grow.", body: "Infrastructure, not experiments. Designed to expand with the business and to be run by your own team.", tone: "growth" },
-];
-
-const RAIL = ["Challenges", "Opportunities", "Roadmap", "Automation", "Transformation", "Growth & scale"];
+// Scene tones drive the line-art motif; all copy comes from translations.
+const TONES = ["challenge", "opportunity", "roadmap", "automation", "transformation", "growth"] as const;
 
 export function Storytelling() {
   const [active, setActive] = useState(0);
@@ -24,6 +17,10 @@ export function Storytelling() {
   const [flashing, setFlashing] = useState<Set<number>>(new Set());
   const railRef = useRef<HTMLUListElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
+
+  const { t } = useLanguage();
+  const RAIL = t.journey.rail;
+  const SCENES = t.journey.scenes;
 
   useEffect(() => {
     const reveal = new IntersectionObserver(
@@ -63,7 +60,7 @@ export function Storytelling() {
       (entries) => {
         if (!entries.some((e) => e.isIntersecting)) return;
         setRevealed(true);
-        RAIL.forEach((_, i) => {
+        TONES.forEach((_, i) => {
           timers.push(
             setTimeout(() => {
               setFlashing((prev) => new Set(prev).add(i)); // highlight teal
@@ -102,7 +99,7 @@ export function Storytelling() {
     const HOLD = 600; // teal duration per item
     const GAP = 150; // dark gap between items
     const STEP = HOLD + GAP; // one-at-a-time slot
-    const SWEEP = RAIL.length * STEP; // full sweep duration
+    const SWEEP = TONES.length * STEP; // full sweep duration
     const PAUSE = 5000; // wait between sweeps
 
     let timers: ReturnType<typeof setTimeout>[] = [];
@@ -114,7 +111,7 @@ export function Storytelling() {
     };
 
     const sweep = () => {
-      RAIL.forEach((_, i) => {
+      TONES.forEach((_, i) => {
         timers.push(setTimeout(() => setFlashing((p) => new Set(p).add(i)), i * STEP));
         timers.push(
           setTimeout(() => setFlashing((p) => {
@@ -171,10 +168,10 @@ export function Storytelling() {
         <div className="hidden lg:block">
           <div className="sticky top-28">
             <span className="font-mono text-xs font-medium uppercase tracking-wider text-lumive-light">
-              The journey
+              {t.journey.eyebrow}
             </span>
             <h2 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-mist">
-              From friction to a business that runs smarter.
+              {t.journey.title}
             </h2>
             <ul ref={railRef} className="mt-9 space-y-1">
               {RAIL.map((label, i) => {
@@ -182,7 +179,7 @@ export function Storytelling() {
                 const on = i === active || flashing.has(i);
                 return (
                   <li
-                    key={label}
+                    key={i}
                     className={`flex items-center gap-3 transition-all duration-[400ms] ease-out motion-reduce:!translate-x-0 motion-reduce:!opacity-100 motion-reduce:!transition-none ${
                       revealed ? "translate-x-0 opacity-100" : "-translate-x-5 opacity-0"
                     }`}
@@ -203,7 +200,7 @@ export function Storytelling() {
         <div>
           {SCENES.map((s, i) => (
             <div
-              key={s.title}
+              key={i}
               data-i={i}
               ref={(el) => { sceneRefs.current[i] = el; }}
               className="story-scene flex min-h-[72vh] flex-col justify-center border-b border-white/5 py-12 first:pt-0 last:border-0 lg:min-h-[78vh]"
@@ -212,7 +209,7 @@ export function Storytelling() {
                 <span className="font-mono text-5xl font-bold text-white/10 lg:text-6xl">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <SceneMotif tone={s.tone} />
+                <SceneMotif tone={TONES[i]} />
               </div>
               <span className="mt-8 font-mono text-xs font-medium uppercase tracking-wider text-lumive-light lg:hidden">
                 {s.eyebrow}

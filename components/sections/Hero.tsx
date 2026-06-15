@@ -1,3 +1,5 @@
+"use client";
+
 import { Reveal } from "../Reveal";
 import { PrismMark } from "../Logo";
 import { Parallax } from "../Parallax";
@@ -5,9 +7,10 @@ import { CTAButton } from "../CTA";
 import { Reassurance } from "../Reassurance";
 import { ParallaxLayer } from "../ParallaxLayer";
 import { palette } from "@/lib/brand";
-import { BOOK_URL } from "@/lib/contact";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export function Hero() {
+  const { t } = useLanguage();
   return (
     <section id="top" className="relative overflow-hidden bg-mist pt-[72px]">
       {/* ambient depth layers */}
@@ -26,42 +29,35 @@ export function Hero() {
           <Reveal>
             <span className="inline-flex items-center gap-2 rounded-full border border-sapphire/15 bg-white/70 px-3.5 py-1.5 font-mono text-[12px] font-medium uppercase tracking-wide text-sapphire">
               <span className="h-1.5 w-1.5 rounded-full bg-teal" />
-              AI implementation, not advice
+              {t.hero.badge}
             </span>
           </Reveal>
 
           <Reveal delay={80}>
             <h1 className="mt-6 text-[clamp(2.6rem,5.2vw,4.25rem)] font-bold leading-[1.05] tracking-tight text-sapphire">
-              AI that actually runs
-              <br className="hidden sm:block" /> your business —{" "}
-              <span className="gradient-text">live in 90 days.</span>
+              {t.hero.title1}
+              <br className="hidden sm:block" /> {t.hero.title2}{" "}
+              <span className="gradient-text">{t.hero.title3}</span>
             </h1>
           </Reveal>
 
           <Reveal delay={160}>
             <p className="mt-6 max-w-text text-lg leading-relaxed text-steel">
-              We design and build the AI systems growing companies need, working inside your
-              operations in 90 days. Not a strategy deck. A system your team runs.
+              {t.hero.body}
             </p>
           </Reveal>
 
           <Reveal delay={240}>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <CTAButton variant="primary" href={BOOK_URL}>
-                Book a Call
-              </CTAButton>
+            <div className="mt-9">
               <CTAButton variant="secondary" href="#framework" withArrow>
-                See how the 90 days works
+                {t.hero.secondaryCta}
               </CTAButton>
             </div>
-            <Reassurance
-              className="mt-4"
-              items={["Pick a time that suits you", "We tell you if it isn't a fit"]}
-            />
+            <Reassurance className="mt-4" items={[...t.hero.reassure]} />
             <p className="mt-4 text-sm text-steel">
-              Already a client?{" "}
+              {t.hero.alreadyClient}{" "}
               <a href="/login" data-sound="nav" className="focus-brand rounded font-medium text-sapphire underline-offset-2 hover:text-teal hover:underline">
-                Login
+                {t.common.login}
               </a>
             </p>
           </Reveal>
@@ -69,11 +65,7 @@ export function Hero() {
           {/* stat strip */}
           <Reveal delay={320}>
             <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-cloud pt-7">
-              {[
-                { n: "90", l: "days to a live system" },
-                { n: "0", l: "strategy decks delivered" },
-                { n: "100%", l: "handed over to your team" },
-              ].map((s) => (
+              {t.hero.stats.map((s) => (
                 <div key={s.l}>
                   <dt className="font-mono text-3xl font-bold text-sapphire">{s.n}</dt>
                   <dd className="mt-1 text-sm leading-snug text-steel">{s.l}</dd>
@@ -118,6 +110,7 @@ const ICON = {
 /* Abstract operational-flow panel — a calm dark motif showing AI working across
    the operation (enquiries → Lumive → your tools). No metrics, charts, or claims. */
 function HeroVisual() {
+  const { t } = useLanguage();
   return (
     <div className="relative">
       <div className="absolute -inset-4 rounded-[28px] bg-gradient-to-br from-sapphire/10 to-teal/10 blur-xl" aria-hidden />
@@ -125,7 +118,7 @@ function HeroVisual() {
         {/* window chrome */}
         <div className="flex items-center gap-2 border-b border-white/5 px-5 py-3.5">
           <PrismMark className="h-5 w-5" tone="dark" />
-          <span className="font-mono text-xs text-cloud/70">lumive · operations</span>
+          <span className="font-mono text-xs text-cloud/70">{t.hero.panelTitle}</span>
           <span className="ml-auto flex gap-1.5">
             <i className="h-2.5 w-2.5 rounded-full bg-white/15" />
             <i className="h-2.5 w-2.5 rounded-full bg-white/15" />
@@ -137,9 +130,9 @@ function HeroVisual() {
           {/* capability chips — qualitative, no metrics */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "Workflows", icon: ICON.flow },
-              { label: "Decisions", icon: ICON.decide },
-              { label: "Always-on", icon: ICON.pulse },
+              { label: t.hero.panelChips[0], icon: ICON.flow },
+              { label: t.hero.panelChips[1], icon: ICON.decide },
+              { label: t.hero.panelChips[2], icon: ICON.pulse },
             ].map((c) => (
               <div key={c.label} className="rounded-md border border-white/8 bg-white/[0.03] p-3">
                 <span className="flex h-7 w-7 items-center justify-center rounded-md bg-teal/12 text-lumive-light">
@@ -154,7 +147,7 @@ function HeroVisual() {
               across your tools. No data, no numbers; just the shape of the work. */}
           <div className="rounded-md border border-white/8 bg-white/[0.02] p-4">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-medium text-cloud/80">Operational flow</span>
+              <span className="text-xs font-medium text-cloud/80">{t.hero.panelFlow}</span>
               <span className="h-2 w-2 animate-pulse-soft rounded-full bg-teal" aria-hidden />
             </div>
             <svg viewBox="0 0 300 132" className="w-full" aria-hidden role="presentation">
@@ -187,9 +180,9 @@ function HeroVisual() {
               <circle cx="150" cy="66" r="6" fill="#3DBFA3" />
             </svg>
             <div className="mt-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-wide text-cloud/45">
-              <span>Inbound</span>
-              <span>Lumive</span>
-              <span>Your tools</span>
+              <span>{t.hero.panelInbound}</span>
+              <span>{t.hero.panelLumive}</span>
+              <span>{t.hero.panelTools}</span>
             </div>
           </div>
 
@@ -199,7 +192,7 @@ function HeroVisual() {
               <PrismMark className="h-4 w-4" stroke={palette.lumiveLight} apex={palette.lumiveLight} />
             </span>
             <p className="text-[13px] leading-snug text-cloud/80">
-              Routing each enquiry to the right place.
+              {t.hero.panelAgent}
             </p>
             <span className="ml-auto animate-pulse-soft text-teal">●</span>
           </div>

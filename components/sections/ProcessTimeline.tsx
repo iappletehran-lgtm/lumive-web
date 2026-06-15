@@ -1,18 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
-const STEPS = [
-  { t: "Discover", d: "Understand how your business actually works." },
-  { t: "Analyze", d: "Find where AI is worth it — and where it is not." },
-  { t: "Strategize", d: "A prioritised plan, not forty-seven ideas." },
-  { t: "Design", d: "Shape the system around your real workflow." },
-  { t: "Build", d: "Develop it inside your existing operations." },
-  { t: "Automate", d: "Put the repetitive work on rails." },
-  { t: "Optimize", d: "Refine on real data, then hand over." },
-];
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export function ProcessTimeline() {
+  const { t } = useLanguage();
+  const STEPS = t.method.steps;
   const ref = useRef<HTMLDivElement>(null);
   const [on, setOn] = useState(false);
 
@@ -33,14 +26,13 @@ export function ProcessTimeline() {
       <div ref={ref} className={`relative mx-auto max-w-container px-5 py-24 lg:px-8 ${on ? "process-on" : ""}`}>
         <div className="max-w-2xl">
           <span className="font-mono text-xs font-medium uppercase tracking-wider text-teal">
-            Our method
+            {t.method.eyebrow}
           </span>
           <h2 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-sapphire lg:text-4xl">
-            Seven steps from first conversation to a system that improves itself.
+            {t.method.title}
           </h2>
           <p className="mt-4 leading-relaxed text-steel">
-            The craft behind every 90-day engagement. Each step has a clear outcome before the
-            next one starts.
+            {t.method.body}
           </p>
         </div>
 

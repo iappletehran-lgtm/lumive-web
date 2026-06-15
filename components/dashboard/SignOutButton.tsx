@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /** Signs the user out and returns them to /login. */
 export function SignOutButton() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
@@ -24,7 +26,7 @@ export function SignOutButton() {
       data-sound="nav"
       className="focus-brand rounded-md border border-sapphire/20 bg-white/60 px-4 py-2 text-sm font-medium text-sapphire transition-all hover:bg-white disabled:opacity-60"
     >
-      {busy ? "Signing out…" : "Sign out"}
+      {busy ? t.dash.signingOut : t.dash.signOut}
     </button>
   );
 }

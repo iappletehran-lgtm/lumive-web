@@ -1,23 +1,12 @@
+"use client";
+
 import { Logo } from "../Logo";
 import { ChannelButtons } from "../Channels";
 import { Socials } from "../Socials";
-
-const COLS = [
-  {
-    h: "Services",
-    links: ["AI Solutions", "AI Agents", "Workflow automation", "Decision support"],
-  },
-  {
-    h: "Company",
-    links: ["About", "How it works", "Careers", "Case studies"],
-  },
-  {
-    h: "Resources",
-    links: ["Insights", "AI readiness guide", "Readiness check", "Pricing"],
-  },
-];
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export function Footer() {
+  const { t } = useLanguage();
   return (
     <footer className="bg-midnight">
       <div className="mx-auto max-w-container px-5 py-16 lg:px-8">
@@ -26,29 +15,28 @@ export function Footer() {
           <div>
             <Logo variant="light" withTagline />
             <p className="mt-5 max-w-sm leading-relaxed text-cloud/70">
-              AI implementation for growing businesses. We build the infrastructure — not the
-              deck. Real systems in 90 days.
+              {t.footer.blurb}
             </p>
 
             <div className="mt-7 max-w-sm">
               <label className="font-mono text-[11px] uppercase tracking-wide text-cloud/60">
-                One useful email, occasionally
+                {t.footer.newsletterLabel}
               </label>
               <div className="mt-2 flex gap-2">
                 <input
                   type="email"
-                  placeholder="you@company.com"
+                  placeholder={t.footer.emailPlaceholder}
                   className="focus-brand min-w-0 flex-1 rounded-md border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-mist placeholder:text-cloud/40"
                 />
                 <button className="focus-brand glow-cta rounded-md bg-brass px-4 py-2.5 text-sm font-semibold text-midnight transition-all hover:brightness-95">
-                  Subscribe
+                  {t.footer.subscribe}
                 </button>
               </div>
             </div>
 
             <div className="mt-7">
               <p className="font-mono text-[11px] uppercase tracking-wide text-cloud/60">
-                Talk to us directly
+                {t.footer.talkDirect}
               </p>
               <ChannelButtons tone="dark" className="mt-3" />
             </div>
@@ -56,7 +44,7 @@ export function Footer() {
 
           {/* link columns */}
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
-            {COLS.map((c) => (
+            {t.footer.cols.map((c) => (
               <div key={c.h}>
                 <h3 className="font-mono text-[11px] uppercase tracking-wide text-cloud/60">
                   {c.h}
@@ -82,13 +70,13 @@ export function Footer() {
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <div className="flex items-center gap-3">
               <span className="font-mono text-[11px] uppercase tracking-wide text-cloud/45">
-                Follow Lumive
+                {t.footer.followLumive}
               </span>
               <Socials tone="dark" />
             </div>
             <div className="flex items-center gap-5 text-sm text-cloud/70">
-              <a href="#" className="hover:text-lumive-light">Privacy</a>
-              <a href="#" className="hover:text-lumive-light">Terms</a>
+              <a href="#" className="hover:text-lumive-light">{t.footer.privacy}</a>
+              <a href="#" className="hover:text-lumive-light">{t.footer.terms}</a>
             </div>
           </div>
         </div>

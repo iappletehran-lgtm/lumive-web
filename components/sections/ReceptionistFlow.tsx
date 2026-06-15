@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Interactive workflow visual for the AI Receptionist card.
@@ -8,18 +9,11 @@ import { useState } from "react";
  * Hovering an input glows it teal, pulses its line into the core, brightens the
  * core, and lights the outputs one by one. Pure CSS animations; React only tracks
  * which input is hovered. Custom stroke icons (sapphire → teal). Mobile-friendly.
+ * Labels come from translations (keyed by icon name).
  */
 
-const INPUTS = [
-  { icon: "chat", label: "Chat" },
-  { icon: "web", label: "Web" },
-  { icon: "phone", label: "Phone" },
-];
-const OUTPUTS = [
-  { icon: "book", label: "Book" },
-  { icon: "answer", label: "Answer" },
-  { icon: "qualify", label: "Qualify" },
-];
+const INPUTS = [{ icon: "chat" }, { icon: "web" }, { icon: "phone" }] as const;
+const OUTPUTS = [{ icon: "book" }, { icon: "answer" }, { icon: "qualify" }] as const;
 
 const COLX = [16, 50, 84]; // node column anchors (% of width)
 const IN_Y = 13; // input row (% of height)
@@ -90,6 +84,7 @@ function FlowIcon({ name }: { name: string }) {
 }
 
 export function ReceptionistFlow() {
+  const { t } = useLanguage();
   const [active, setActive] = useState<number | null>(null);
   const on = active !== null;
 
@@ -126,7 +121,7 @@ export function ReceptionistFlow() {
 
         {/* input nodes */}
         {INPUTS.map((n, i) => (
-          <div key={n.label} className="rf-anchor" style={{ left: `${COLX[i]}%`, top: `${IN_Y}%` }}>
+          <div key={n.icon} className="rf-anchor" style={{ left: `${COLX[i]}%`, top: `${IN_Y}%` }}>
             <button
               type="button"
               className={`rf-node rf-input ${active === i ? "is-on" : ""}`}
@@ -139,7 +134,7 @@ export function ReceptionistFlow() {
               <span className="rf-ico">
                 <FlowIcon name={n.icon} />
               </span>
-              <span className="rf-lbl">{n.label}</span>
+              <span className="rf-lbl">{t.services.flow[n.icon]}</span>
             </button>
           </div>
         ))}
@@ -148,13 +143,13 @@ export function ReceptionistFlow() {
         <div className="rf-anchor" style={{ left: `${CX}%`, top: `${CY}%` }}>
           <div className={`rf-core ${on ? "is-active" : ""}`}>
             <span className="rf-core-lbl">Lumive AI</span>
-            <span className="rf-core-sub">Core</span>
+            <span className="rf-core-sub">{t.services.flow.core}</span>
           </div>
         </div>
 
         {/* output nodes */}
         {OUTPUTS.map((n, i) => (
-          <div key={n.label} className="rf-anchor" style={{ left: `${COLX[i]}%`, top: `${OUT_Y}%` }}>
+          <div key={n.icon} className="rf-anchor" style={{ left: `${COLX[i]}%`, top: `${OUT_Y}%` }}>
             <div
               className={`rf-node rf-output ${on ? "is-lit" : ""}`}
               style={{ transitionDelay: on ? `${i * 0.15}s` : "0s" }}
@@ -162,7 +157,7 @@ export function ReceptionistFlow() {
               <span className="rf-ico">
                 <FlowIcon name={n.icon} />
               </span>
-              <span className="rf-lbl">{n.label}</span>
+              <span className="rf-lbl">{t.services.flow[n.icon]}</span>
             </div>
           </div>
         ))}

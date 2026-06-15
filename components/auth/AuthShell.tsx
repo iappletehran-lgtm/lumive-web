@@ -15,12 +15,14 @@ export function AuthShell({
   subtitle,
   children,
   footer,
+  logoLabel = "Lumive AI — home",
 }: {
   eyebrow: string;
   title: ReactNode;
   subtitle?: string;
   children: ReactNode;
   footer?: ReactNode;
+  logoLabel?: string;
 }) {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-5 py-14">
@@ -34,7 +36,7 @@ export function AuthShell({
           prefetch={false}
           data-sound="nav"
           className="focus-brand mx-auto mb-8 flex w-fit items-center justify-center rounded-md"
-          aria-label="Lumive AI — home"
+          aria-label={logoLabel}
         >
           <Logo />
         </Link>

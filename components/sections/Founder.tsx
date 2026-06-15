@@ -1,9 +1,13 @@
+"use client";
+
 import { Reveal } from "../Reveal";
 import { CTAButton } from "../CTA";
 import { Reassurance } from "../Reassurance";
 import { BOOK_URL } from "@/lib/contact";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export function Founder() {
+  const { t } = useLanguage();
   return (
     <section id="founder" className="bg-white">
       <div className="mx-auto max-w-container px-5 py-24 lg:px-8">
@@ -28,22 +32,13 @@ export function Founder() {
           <Reveal delay={120}>
             <div>
               <span className="font-mono text-xs font-medium uppercase tracking-wider text-teal">
-                The people behind it
+                {t.founder.eyebrow}
               </span>
               <h2 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-sapphire lg:text-4xl">
-                Founder-led, on purpose.
+                {t.founder.title}
               </h2>
-              <p className="mt-6 text-lg leading-relaxed text-steel">
-                We started Lumive AI after seeing the same pattern repeat: capable businesses
-                paying for AI strategy that never shipped. The tools existed. The gap was
-                execution. So we built a company that does the part everyone else stops short of —
-                the building.
-              </p>
-              <p className="mt-4 text-lg leading-relaxed text-steel">
-                We are early, and deliberately working with a small number of founding clients.
-                That means direct founder involvement and a sharper engagement than you would get
-                from a larger firm.
-              </p>
+              <p className="mt-6 text-lg leading-relaxed text-steel">{t.founder.p1}</p>
+              <p className="mt-4 text-lg leading-relaxed text-steel">{t.founder.p2}</p>
 
               <div className="mt-7 flex items-center gap-4 rounded-lg border border-cloud/70 bg-mist/40 p-5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -55,19 +50,16 @@ export function Founder() {
                   decoding="async"
                 />
                 <div>
-                  <p className="font-semibold text-sapphire">Alireza Sharafeddin</p>
-                  <p className="text-sm text-steel">Co-Founder</p>
+                  <p className="font-semibold text-sapphire">{t.founder.name}</p>
+                  <p className="text-sm text-steel">{t.founder.role}</p>
                 </div>
               </div>
 
               <div className="mt-8">
                 <CTAButton variant="primary" href={BOOK_URL}>
-                  Book a Call
+                  {t.common.bookACall}
                 </CTAButton>
-                <Reassurance
-                  className="mt-4"
-                  items={["Direct with the founder", "Reply within one business day"]}
-                />
+                <Reassurance className="mt-4" items={[...t.founder.reassure]} />
               </div>
             </div>
           </Reveal>

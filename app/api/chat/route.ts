@@ -9,7 +9,7 @@ export const runtime = "nodejs";
  * brand-safe fallback when OpenRouter is unavailable, so the widget never breaks.
  */
 export async function POST(req: NextRequest) {
-  let body: { messages?: LumiMessage[] };
+  let body: { messages?: LumiMessage[]; lang?: string };
   try {
     body = await req.json();
   } catch {
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No messages." }, { status: 400 });
   }
 
-  const reply = await callLumi(messages);
+  const reply = await callLumi(messages, body.lang === "fa" ? "fa" : undefined);
 
   if (!reply) {
     return NextResponse.json({

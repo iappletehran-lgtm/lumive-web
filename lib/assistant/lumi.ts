@@ -52,11 +52,17 @@ export type LumiMessage = { role: "user" | "assistant"; content: string };
  * Get Lumi's reply from OpenRouter. Returns null if no key is configured or the
  * call fails, so the route can degrade to a brand-safe fallback message.
  */
-export async function callLumi(messages: LumiMessage[]): Promise<string | null> {
+export async function callLumi(messages: LumiMessage[], lang?: string): Promise<string | null> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) return null;
 
   const site = process.env.NEXT_PUBLIC_SITE_URL || "https://lumive-web.vercel.app";
+
+  // In Persian mode, steer the reply language (brand names stay Latin).
+  const system =
+    lang === "fa"
+      ? `${LUMI_SYSTEM_PROMPT}\n\nThe user is communicating in Persian (Farsi). Reply in natural, professional Persian. Keep 'Lumive AI' and 'LUMI' in English/Latin script.`
+      : LUMI_SYSTEM_PROMPT;
 
   try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -71,7 +77,7 @@ export async function callLumi(messages: LumiMessage[]): Promise<string | null> 
       body: JSON.stringify({
         model: LUMI_MODEL,
         messages: [
-          { role: "system", content: LUMI_SYSTEM_PROMPT },
+          { role: "system", content: system },
           ...messages.map((m) => ({ role: m.role, content: m.content })),
         ],
         temperature: 0.5,

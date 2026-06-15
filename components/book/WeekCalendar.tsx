@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 type SlotsByDate = Record<string, { start: string }[]>;
 
@@ -31,6 +32,7 @@ export function WeekCalendar({
   timeZone: string;
   onPick: (iso: string) => void;
 }) {
+  const { t } = useLanguage();
   const today = useMemo(startOfToday, []);
   const [anchor, setAnchor] = useState<Date>(today);
   const [slots, setSlots] = useState<SlotsByDate>({});
@@ -51,7 +53,7 @@ export function WeekCalendar({
       .then((r) => r.json())
       .then((j) => {
         if (cancelled) return;
-        if (!j.ok) throw new Error(j.error || "Could not load availability.");
+        if (!j.ok) throw new Error(j.error || t.book.loadError);
         const data: SlotsByDate = j.slots || {};
         setSlots(data);
         // Auto-select the first day in view that has future slots.
@@ -86,12 +88,12 @@ export function WeekCalendar({
           onClick={() => canGoBack && setAnchor(addDays(anchor, -7))}
           disabled={!canGoBack}
           data-sound="nav"
-          aria-label="Previous week"
+          aria-label={t.book.prevWeek}
           className="focus-brand flex h-8 w-8 items-center justify-center rounded-md border border-cloud bg-white/60 text-sapphire transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
         </button>
-        <span className="font-mono text-[11px] uppercase tracking-wide text-steel">
+        <span className="font-mono text-[11px] uppercase tracking-wide text-steel" dir="ltr">
           {anchor.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone })} –{" "}
           {addDays(anchor, 6).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone })}
         </span>
@@ -99,7 +101,7 @@ export function WeekCalendar({
           type="button"
           onClick={() => setAnchor(addDays(anchor, 7))}
           data-sound="nav"
-          aria-label="Next week"
+          aria-label={t.book.nextWeek}
           className="focus-brand flex h-8 w-8 items-center justify-center rounded-md border border-cloud bg-white/60 text-sapphire transition-colors hover:bg-white"
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
@@ -143,18 +145,16 @@ export function WeekCalendar({
       {/* time slots */}
       <div className="mt-6 min-h-[120px]">
         {loading ? (
-          <p className="py-8 text-center text-sm text-steel/70">Loading available times…</p>
+          <p className="py-8 text-center text-sm text-steel/70">{t.book.loadingTimes}</p>
         ) : error ? (
           <p className="py-8 text-center text-sm text-ember">{error}</p>
         ) : activeSlots.length === 0 ? (
-          <p className="py-8 text-center text-sm text-steel/70">
-            No times available this week. Try the next week.
-          </p>
+          <p className="py-8 text-center text-sm text-steel/70">{t.book.noTimes}</p>
         ) : (
           <>
             <p className="mb-3 font-mono text-[11px] uppercase tracking-wide text-steel">
-              Available times{" "}
-              <span className="text-steel/50">· {timeZone.replace(/_/g, " ")}</span>
+              {t.book.availableTimes}{" "}
+              <span className="text-steel/50" dir="ltr">· {timeZone.replace(/_/g, " ")}</span>
             </p>
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
               {activeSlots.map((s) => (

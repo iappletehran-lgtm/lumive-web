@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell, AuthField } from "@/components/auth/AuthShell";
 import { homeForRole } from "@/lib/roles";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 type Status = "idle" | "submitting";
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
@@ -34,7 +36,7 @@ export default function LoginPage() {
       // wrong password — keep the message non-enumerating but human.
       setError(
         signInError.message === "Invalid login credentials"
-          ? "That email and password do not match. Check them and try again."
+          ? t.auth.invalidCredentials
           : signInError.message
       );
       setStatus("idle");
@@ -63,28 +65,29 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      eyebrow="Client portal"
+      logoLabel={t.auth.logoLabel}
+      eyebrow={t.auth.loginEyebrow}
       title={
         <>
-          Sign in to <span className="gradient-text">Lumive.</span>
+          {t.auth.loginTitlePre}<span className="gradient-text">{t.auth.loginTitleBrand}</span>
         </>
       }
-      subtitle="Access your projects, deliverables, and the work in progress."
+      subtitle={t.auth.loginSubtitle}
       footer={
         <>
-          New here?{" "}
+          {t.auth.loginFooterPre}
           <Link href="/register" className="font-medium text-sapphire hover:text-teal">
-            Create an account
+            {t.auth.loginFooterLink}
           </Link>
         </>
       }
     >
       <form className="space-y-5" onSubmit={onSubmit} noValidate>
         <AuthField
-          label="Work email"
+          label={t.auth.workEmail}
           name="email"
           type="email"
-          placeholder="you@company.com"
+          placeholder={t.auth.emailPlaceholder}
           autoComplete="email"
           required
         />
@@ -94,7 +97,7 @@ export default function LoginPage() {
               htmlFor="a-password"
               className="font-mono text-[11px] font-medium uppercase tracking-wide text-steel"
             >
-              Password
+              {t.auth.password}
             </label>
           </div>
           <input
@@ -103,7 +106,7 @@ export default function LoginPage() {
             type="password"
             required
             autoComplete="current-password"
-            placeholder="Your password"
+            placeholder={t.auth.passwordPlaceholder}
             className="mt-2 w-full rounded-md border border-cloud bg-white/70 px-4 py-3 text-sm text-midnight placeholder:text-steel/50 focus:border-sapphire focus:bg-white focus:outline-none"
           />
         </div>
@@ -120,7 +123,7 @@ export default function LoginPage() {
           disabled={status === "submitting"}
           className="focus-brand glow-cta w-full rounded-md bg-brass px-6 py-3.5 text-base font-semibold text-midnight shadow-md transition-all hover:brightness-95 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {status === "submitting" ? "Signing in…" : "Sign in"}
+          {status === "submitting" ? t.auth.signingIn : t.auth.signIn}
         </button>
       </form>
     </AuthShell>

@@ -1,14 +1,10 @@
+"use client";
+
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+
 /** The five project stages, in order. Mirrors the projects.status check constraint. */
 export const STAGES = ["discovery", "build", "launch", "review", "complete"] as const;
 export type Stage = (typeof STAGES)[number];
-
-const LABELS: Record<Stage, string> = {
-  discovery: "Discovery",
-  build: "Build",
-  launch: "Launch",
-  review: "Review",
-  complete: "Complete",
-};
 
 /**
  * Horizontal project-status stepper. Completed stages read in teal (growth),
@@ -16,6 +12,7 @@ const LABELS: Record<Stage, string> = {
  * stay quiet in cloud — no brass, which the brand reserves for conversion.
  */
 export function StatusStepper({ status }: { status: Stage }) {
+  const { t } = useLanguage();
   const current = STAGES.indexOf(status);
 
   return (
@@ -44,7 +41,7 @@ export function StatusStepper({ status }: { status: Stage }) {
                   active ? "font-semibold text-sapphire" : done ? "text-teal" : "text-steel/60",
                 ].join(" ")}
               >
-                {LABELS[stage]}
+                {t.dash.stages[stage]}
               </span>
             </div>
             {i < STAGES.length - 1 && (

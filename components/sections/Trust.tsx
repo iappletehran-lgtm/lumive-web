@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface Metric {
   value: number;
@@ -54,6 +55,7 @@ function Stat({ m, run, delay }: { m: Metric; run: boolean; delay: number }) {
 }
 
 export function Trust() {
+  const { t } = useLanguage();
   const ref = useRef<HTMLDivElement>(null);
   const [run, setRun] = useState(false);
 
@@ -79,11 +81,11 @@ export function Trust() {
       <div className="dot-grid pointer-events-none absolute inset-0 opacity-40" aria-hidden />
       <div ref={ref} className="relative mx-auto max-w-container px-5 py-16 lg:px-8">
         <p className="mb-9 text-center font-mono text-xs font-medium uppercase tracking-wider text-teal">
-          Built for growing businesses across professional services, logistics, e-commerce, and SaaS
+          {t.trust.eyebrow}
         </p>
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
           {METRICS.map((m, i) => (
-            <Stat key={m.label} m={m} run={run} delay={i * 90} />
+            <Stat key={i} m={{ ...m, label: t.trust.metrics[i].l }} run={run} delay={i * 90} />
           ))}
         </div>
       </div>

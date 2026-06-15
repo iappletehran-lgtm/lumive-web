@@ -3,7 +3,8 @@
 import { Fragment, useEffect, useRef, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { PrismMark } from "../Logo";
-import { LUMI_GREETING, type LumiMessage } from "@/lib/assistant/lumi";
+import { type LumiMessage } from "@/lib/assistant/lumi";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface UIMessage extends LumiMessage {
   id: string;
@@ -18,12 +19,23 @@ const HIDE_ON = /^\/(dashboard|admin|login|register)(\/|$)/;
 
 export function LumiWidget() {
   const pathname = usePathname();
+  const { t, lang } = useLanguage();
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<UIMessage[]>([
-    { id: nid(), role: "assistant", content: LUMI_GREETING },
+  const [messages, setMessages] = useState<UIMessage[]>(() => [
+    { id: nid(), role: "assistant", content: t.chat.greeting },
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
+
+  // Keep the seeded greeting in the active language until the visitor speaks.
+  useEffect(() => {
+    setMessages((prev) =>
+      prev.length === 1 && prev[0].role === "assistant"
+        ? [{ ...prev[0], content: t.chat.greeting }]
+        : prev
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,30 +69,20 @@ export function LumiWidget() {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ messages: history.map(({ role, content }) => ({ role, content })) }),
+          body: JSON.stringify({ messages: history.map(({ role, content }) => ({ role, content })), lang }),
         });
         const data = await res.json().catch(() => ({}));
-        const reply: string =
-          data.reply ||
-          "I'm having trouble responding right now. You can book a 30-minute strategy call at /book.";
+        const reply: string = data.reply || t.chat.fallback;
         await wait(Math.min(700, 250 + reply.length * 6));
         setMessages((prev) => [...prev, { id: nid(), role: "assistant", content: reply }]);
       } catch {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: nid(),
-            role: "assistant",
-            content:
-              "Something went wrong on my side. You can book a 30-minute strategy call at /book.",
-          },
-        ]);
+        setMessages((prev) => [...prev, { id: nid(), role: "assistant", content: t.chat.fallback }]);
       } finally {
         setTyping(false);
         inputRef.current?.focus();
       }
     },
-    [messages, typing]
+    [messages, typing, lang, t.chat.fallback]
   );
 
   // Public pages only.
@@ -98,14 +100,14 @@ export function LumiWidget() {
           />
           <button
             onClick={() => setOpen(true)}
-            aria-label="Chat with Lumi"
+            aria-label={t.chat.launcher}
             data-sound="assistant"
             className="focus-brand relative flex items-center gap-2.5 rounded-full bg-sapphire py-2.5 pl-2.5 pr-4 text-mist shadow-lg transition-all duration-200 ease-brand hover:bg-sapphire/90 hover:shadow-xl"
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
               <PrismMark className="h-5 w-5" tone="dark" />
             </span>
-            <span className="text-sm font-semibold">Chat with Lumi</span>
+            <span className="text-sm font-semibold">{t.chat.launcher}</span>
             <span className="h-2 w-2 rounded-full bg-lumive-light motion-safe:animate-pulse-soft" />
           </button>
         </div>
@@ -124,7 +126,7 @@ export function LumiWidget() {
       {open && (
         <div
           role="dialog"
-          aria-label="Lumi — Lumive AI Assistant"
+          aria-label={t.chat.header}
           className="glass fixed inset-0 z-[80] flex flex-col bg-mist shadow-xl animate-fade-up
                      sm:inset-auto sm:bottom-6 sm:right-6 sm:h-[min(640px,82vh)] sm:w-[380px] sm:rounded-2xl sm:border sm:border-cloud/60"
         >
@@ -135,10 +137,10 @@ export function LumiWidget() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold leading-tight text-mist">
-                Lumi — Lumive AI Assistant
+                {t.chat.header}
               </p>
               <p className="flex items-center gap-1.5 text-[12px] text-cloud/80">
-                <span className="h-1.5 w-1.5 rounded-full bg-lumive-light" /> Online
+                <span className="h-1.5 w-1.5 rounded-full bg-lumive-light" /> {t.chat.online}
               </p>
             </div>
             <button
@@ -172,7 +174,7 @@ export function LumiWidget() {
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask Lumi anything…"
+              placeholder={t.chat.placeholder}
               className="min-w-0 flex-1 rounded-md border border-cloud bg-mist/40 px-4 py-2.5 text-sm text-midnight placeholder:text-steel/60 focus:border-sapphire focus:bg-white focus:outline-none"
             />
             <button

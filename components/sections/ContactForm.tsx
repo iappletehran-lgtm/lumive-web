@@ -1,19 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { CTAButton } from "../CTA";
 import { Reassurance } from "../Reassurance";
-import { BOOKING_URL } from "@/lib/contact";
+import { BOOK_URL } from "@/lib/contact";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 type Status = "idle" | "submitting" | "error";
 
 /**
  * Contact-form lead capture (name, email, message). Posts to /api/contact, which
- * forwards or stores the lead. Booking stays on Cal.com — the "Pick a time" link
- * below is the primary booking path; this form is the "send a message" option.
- * Markup and styling are unchanged from the original card — only behaviour added.
+ * forwards or stores the lead. The "Book a call" link routes to the on-site /book
+ * flow; this form is the "send a message" option.
  */
 export function ContactForm() {
+  const { t } = useLanguage();
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
@@ -32,7 +32,7 @@ export function ContactForm() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.ok) {
-        throw new Error(json.error || "Something went wrong. Please try again or book a time.");
+        throw new Error(json.error || t.contact.errorGeneric);
       }
       setDone(true);
     } catch (err) {
@@ -47,18 +47,14 @@ export function ContactForm() {
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal/15 text-xl text-teal">
           ✓
         </span>
-        <h3 className="mt-5 text-xl font-semibold text-sapphire">Thank you — message received.</h3>
-        <p className="mt-2 leading-relaxed text-steel">
-          We reply within one business day. If you would rather not wait, you can book a time now.
-        </p>
+        <h3 className="mt-5 text-xl font-semibold text-sapphire">{t.contact.thanksTitle}</h3>
+        <p className="mt-2 leading-relaxed text-steel">{t.contact.thanksBody}</p>
         <a
-          href={BOOKING_URL}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={BOOK_URL}
           data-sound="cta"
           className="focus-brand glow-cta mt-6 inline-flex items-center justify-center rounded-md bg-brass px-6 py-3 font-semibold text-midnight shadow-md transition-all hover:brightness-95"
         >
-          Book a 30-minute call
+          {t.common.bookCall30}
         </a>
       </div>
     );
@@ -67,24 +63,24 @@ export function ContactForm() {
   return (
     <div className="glass-tint rounded-2xl border border-white/70 p-7 shadow-lg lg:p-9">
       <form className="space-y-5" onSubmit={onSubmit} noValidate>
-        <p className="text-sm text-steel/80">Two details to start — the rest is optional.</p>
+        <p className="text-sm text-steel/80">{t.contact.formIntro}</p>
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Name" name="name" placeholder="Your name" required />
-          <Field label="Work email" name="email" type="email" placeholder="you@company.com" required />
+          <Field label={t.contact.name} name="name" placeholder={t.contact.namePlaceholder} required />
+          <Field label={t.contact.workEmail} name="email" type="email" placeholder={t.contact.emailPlaceholder} required />
         </div>
-        <Field label="Company" name="company" placeholder="Company name" optional />
+        <Field label={t.contact.company} name="company" placeholder={t.contact.companyPlaceholder} optional />
         <div>
           <label htmlFor="c-msg" className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-wide text-steel">
-            What are you trying to solve?
+            {t.contact.msgLabel}
             <span className="rounded bg-steel/10 px-1.5 py-0.5 text-[9px] font-medium normal-case tracking-normal text-steel/60">
-              Optional
+              {t.contact.optional}
             </span>
           </label>
           <textarea
             id="c-msg"
             name="message"
             rows={3}
-            placeholder="A sentence is plenty — or leave it and we will ask on the call."
+            placeholder={t.contact.msgPlaceholder}
             className="mt-2 w-full resize-none rounded-md border border-cloud bg-white/70 px-4 py-3 text-sm text-midnight placeholder:text-steel/50 focus:border-sapphire focus:bg-white focus:outline-none"
           />
         </div>
@@ -105,7 +101,7 @@ export function ContactForm() {
           disabled={status === "submitting"}
           className="focus-brand w-full rounded-md bg-brass px-6 py-3.5 text-base font-semibold text-midnight shadow-md transition-all hover:brightness-95 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {status === "submitting" ? "Sending…" : "Send message"}
+          {status === "submitting" ? t.contact.sending : t.contact.send}
         </button>
 
         {status === "error" && (
@@ -114,27 +110,22 @@ export function ContactForm() {
           </p>
         )}
 
-        <Reassurance
-          className="justify-center"
-          items={["Takes under a minute", "No spam", "We never share your details"]}
-        />
+        <Reassurance className="justify-center" items={[...t.contact.formReassure]} />
 
         <div className="flex items-center gap-3 text-steel/50">
           <span className="h-px flex-1 bg-cloud" />
-          <span className="font-mono text-[11px] uppercase tracking-wide">or</span>
+          <span className="font-mono text-[11px] uppercase tracking-wide">{t.contact.or}</span>
           <span className="h-px flex-1 bg-cloud" />
         </div>
 
-        {/* Primary booking path — opens the Cal.com scheduling page */}
+        {/* Primary booking path — the on-site /book flow (calendar → payment → confirm) */}
         <a
-          href={BOOKING_URL}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={BOOK_URL}
           data-sound="cta"
           className="focus-brand glow-cta flex items-center justify-center gap-2 rounded-md bg-sapphire px-6 py-3.5 text-base font-semibold text-mist transition-all hover:brightness-110"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 9h18M8 3v4M16 3v4" /></svg>
-          Book a 30-minute call
+          {t.common.bookCall30}
         </a>
       </form>
     </div>
@@ -156,13 +147,14 @@ function Field({
   optional?: boolean;
   required?: boolean;
 }) {
+  const { t } = useLanguage();
   return (
     <div>
       <label htmlFor={`c-${name}`} className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-wide text-steel">
         {label}
         {optional && (
           <span className="rounded bg-steel/10 px-1.5 py-0.5 text-[9px] font-medium normal-case tracking-normal text-steel/60">
-            Optional
+            {t.contact.optional}
           </span>
         )}
       </label>

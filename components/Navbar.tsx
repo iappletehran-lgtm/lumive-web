@@ -3,19 +3,21 @@
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 import { SoundToggle } from "./SoundToggle";
+import { LanguageToggle } from "./i18n/LanguageToggle";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { startSync, subscribeSync } from "@/lib/sync";
-import { BOOK_URL } from "@/lib/contact";
 
 const LINKS = [
-  { label: "Services", href: "/#services" },
-  { label: "How It Works", href: "/#framework" },
-  { label: "Lumive Lab", href: "/lab" },
-  { label: "Why Lumive", href: "/#why" },
-  { label: "About", href: "/#founder" },
-  { label: "Contact", href: "/#contact" },
-];
+  { key: "services", href: "/#services" },
+  { key: "howItWorks", href: "/#framework" },
+  { key: "lab", href: "/lab" },
+  { key: "why", href: "/#why" },
+  { key: "about", href: "/#founder" },
+  { key: "contact", href: "/#contact" },
+] as const;
 
 export function Navbar() {
+  const { t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -53,7 +55,7 @@ export function Navbar() {
               data-sound="nav"
               className="focus-brand rounded text-[15px] font-medium text-midnight/80 transition-colors hover:text-sapphire"
             >
-              {l.label}
+              {t.nav[l.key]}
             </a>
           ))}
           <SoundToggle />
@@ -62,15 +64,9 @@ export function Navbar() {
             data-sound="nav"
             className="focus-brand rounded text-[15px] font-medium text-midnight/80 transition-colors hover:text-sapphire"
           >
-            Login
+            {t.common.login}
           </a>
-          <a
-            href={BOOK_URL}
-            data-sound="cta"
-            className="focus-brand glow-cta rounded-md bg-brass px-5 py-2.5 text-[15px] font-semibold text-midnight shadow-sm transition-all duration-200 ease-brand hover:brightness-95"
-          >
-            Book a Call
-          </a>
+          <LanguageToggle />
         </div>
 
         {/* mobile toggle */}
@@ -100,7 +96,7 @@ export function Navbar() {
                 onClick={() => setOpen(false)}
                 className="rounded-md px-3 py-3 text-base font-medium text-midnight/85 hover:bg-white"
               >
-                {l.label}
+                {t.nav[l.key]}
               </a>
             ))}
             <a
@@ -109,19 +105,15 @@ export function Navbar() {
               onClick={() => setOpen(false)}
               className="rounded-md px-3 py-3 text-base font-medium text-midnight/85 hover:bg-white"
             >
-              Login
-            </a>
-            <a
-              href={BOOK_URL}
-              data-sound="cta"
-              onClick={() => setOpen(false)}
-              className="glow-cta mt-2 rounded-md bg-brass px-5 py-3 text-center text-base font-semibold text-midnight"
-            >
-              Book a Call
+              {t.common.login}
             </a>
             <div className="mt-3 flex items-center justify-between border-t border-cloud/60 px-3 pt-3">
-              <span className="text-sm font-medium text-steel">Interface sounds</span>
+              <span className="text-sm font-medium text-steel">{t.nav.sounds}</span>
               <SoundToggle />
+            </div>
+            <div className="mt-3 flex items-center justify-between px-3">
+              <span className="text-sm font-medium text-steel">EN | FA</span>
+              <LanguageToggle />
             </div>
           </div>
         </div>

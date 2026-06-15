@@ -15,12 +15,14 @@ export function DashboardShell({
   subtitle,
   email,
   children,
+  logoLabel = "Lumive AI — home",
 }: {
   eyebrow: string;
   title: ReactNode;
   subtitle?: string;
   email?: string;
   children: ReactNode;
+  logoLabel?: string;
 }) {
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -29,12 +31,12 @@ export function DashboardShell({
 
       <header className="glass-tint sticky top-0 z-[var(--z-nav)] border-b border-white/60">
         <div className="mx-auto flex max-w-container items-center justify-between px-5 py-3.5 lg:px-8">
-          <Link href="/" prefetch={false} data-sound="nav" className="focus-brand rounded-md" aria-label="Lumive AI — home">
+          <Link href="/" prefetch={false} data-sound="nav" className="focus-brand rounded-md" aria-label={logoLabel}>
             <Logo />
           </Link>
           <div className="flex items-center gap-4">
             {email && (
-              <span className="hidden text-sm text-steel sm:inline">{email}</span>
+              <span className="hidden text-sm text-steel sm:inline" dir="ltr">{email}</span>
             )}
             <SignOutButton />
           </div>

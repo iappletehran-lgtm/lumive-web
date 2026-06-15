@@ -1,47 +1,20 @@
+"use client";
+
 import { Reveal } from "../Reveal";
 import { CTAButton } from "../CTA";
 import { ParallaxLayer } from "../ParallaxLayer";
 import { ReceptionistFlow } from "./ReceptionistFlow";
-import { BOOKING_URL } from "@/lib/contact";
+import { BOOK_URL } from "@/lib/contact";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
-const SERVICES = [
-  {
-    title: "AI Receptionist",
-    desc: "Answers inbound enquiries by chat, web, or phone — greets people, answers questions, books appointments, and qualifies leads, around the clock.",
-    outcome: "No missed enquiries. Faster response. Less front-desk work.",
-    icon: "receptionist",
-    feature: true,
-  },
-  {
-    title: "AI Chat Systems",
-    desc: "Custom AI chat for your website and your team — trained on your business and built into your tools, not a generic bot.",
-    outcome: "More visitors converted. Fewer repeat questions.",
-    icon: "chat",
-  },
-  {
-    title: "Workflow Automation",
-    desc: "We orchestrate the repetitive, rule-based work that moves between your tools.",
-    outcome: "Hours saved each week.",
-    icon: "flow",
-  },
-  {
-    title: "CRM Automation Flows",
-    desc: "Capture and route leads, trigger follow-ups, and keep records current automatically.",
-    outcome: "Fewer deals going cold.",
-    icon: "crm",
-  },
-  {
-    title: "Intelligent Reporting",
-    desc: "Reporting that updates itself and explains what changed, ready when you need it.",
-    outcome: "See reality sooner. Decide with evidence.",
-    icon: "report",
-  },
-  {
-    title: "Custom AI Agents",
-    desc: "Software that handles a defined job end to end — and knows when to hand off to a person.",
-    outcome: "Throughput without added headcount.",
-    icon: "agent",
-  },
+// Icon + feature flag stay here; copy (title/desc/outcome) comes from translations.
+const META: { icon: string; feature?: boolean }[] = [
+  { icon: "receptionist", feature: true },
+  { icon: "chat" },
+  { icon: "flow" },
+  { icon: "crm" },
+  { icon: "report" },
+  { icon: "agent" },
 ];
 
 function Icon({ name, className = "h-6 w-6" }: { name: string; className?: string }) {
@@ -63,6 +36,7 @@ function Icon({ name, className = "h-6 w-6" }: { name: string; className?: strin
 }
 
 export function Services() {
+  const { t } = useLanguage();
   return (
     <section id="services" className="relative overflow-hidden bg-gradient-to-b from-mist/50 via-white to-white">
       <ParallaxLayer speed={0.08} className="pointer-events-none absolute -left-32 top-24">
@@ -73,25 +47,26 @@ export function Services() {
           <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
             <div className="max-w-2xl">
               <span className="font-mono text-xs font-medium uppercase tracking-wider text-teal">
-                Core services
+                {t.services.eyebrow}
               </span>
               <h2 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-sapphire lg:text-4xl">
-                We design and build working AI systems — only what earns its place.
+                {t.services.title}
               </h2>
             </div>
-            <CTAButton variant="tertiary" href={BOOKING_URL} withArrow className="shrink-0 text-base">
-              Discuss your use case
+            <CTAButton variant="tertiary" href={BOOK_URL} withArrow className="shrink-0 text-base">
+              {t.services.discuss}
             </CTAButton>
           </div>
         </Reveal>
 
         {/* Bento grid */}
         <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:auto-rows-fr lg:grid-cols-3">
-          {SERVICES.map((s, i) => {
+          {META.map((s, i) => {
             const feature = s.feature;
+            const card = t.services.cards[i];
             return (
               <Reveal
-                key={s.title}
+                key={i}
                 delay={(i % 3) * 90}
                 className={feature ? "sm:col-span-2 lg:col-span-2 lg:row-span-2" : ""}
               >
@@ -112,16 +87,16 @@ export function Services() {
                     </span>
                     {feature && (
                       <span className="rounded-full border border-teal/30 bg-teal/10 px-3 py-1 font-mono text-[10px] uppercase tracking-wide text-teal">
-                        Always on · 24/7
+                        {t.services.alwaysOn}
                       </span>
                     )}
                   </div>
 
                   <h3 className={`relative mt-5 font-semibold text-sapphire ${feature ? "text-2xl" : "text-lg"}`}>
-                    {s.title}
+                    {card.title}
                   </h3>
                   <p className={`relative mt-2 leading-relaxed text-steel ${feature ? "text-lg max-w-md" : ""}`}>
-                    {s.desc}
+                    {card.desc}
                   </p>
 
                   {feature && (
@@ -132,7 +107,7 @@ export function Services() {
 
                   <p className="relative mt-auto flex items-start gap-2 pt-5 text-sm font-medium text-teal">
                     <span aria-hidden className="mt-0.5">→</span>
-                    <span>{s.outcome}</span>
+                    <span>{card.outcome}</span>
                   </p>
                 </div>
               </Reveal>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CopyField } from "./CopyField";
 import { WeekCalendar } from "./WeekCalendar";
 import type { PaymentStatus } from "@/lib/booking";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 type Payment = {
   payment_id: string;
@@ -27,6 +28,7 @@ const POLL_MS = 10_000;
  * meeting link; this page flips to the success state on its own.
  */
 export function BookFlow() {
+  const { t } = useLanguage();
   const tz = useMemo(
     () => (typeof Intl !== "undefined" && Intl.DateTimeFormat().resolvedOptions().timeZone) || "UTC",
     []
@@ -63,7 +65,7 @@ export function BookFlow() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.ok || !json.payment) {
-        throw new Error(json.error || "Could not start the payment. Please try again.");
+        throw new Error(json.error || t.book.paymentStartError);
       }
       setEmail((data.email || "").trim());
       setPayment(json.payment as Payment);
@@ -100,18 +102,20 @@ export function BookFlow() {
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-teal/15 text-2xl text-teal">
           ✓
         </span>
-        <h2 className="mt-5 text-2xl font-semibold text-sapphire">You are booked</h2>
+        <h2 className="mt-5 text-2xl font-semibold text-sapphire">{t.book.bookedTitle}</h2>
         {slot && (
           <p className="mt-2 font-mono text-[13px] uppercase tracking-wide text-teal">{slotLabel(slot)}</p>
         )}
         <p className="mx-auto mt-3 max-w-sm leading-relaxed text-steel">
-          Payment confirmed. Check your email for your meeting link
           {email ? (
             <>
-              {" "}— we sent it to <span className="font-medium text-midnight">{email}</span>
+              {t.book.successEmailPre}
+              <span className="font-medium text-midnight" dir="ltr">{email}</span>
+              {t.book.successEmailPost}
             </>
-          ) : null}
-          .
+          ) : (
+            t.book.successNoEmail
+          )}
         </p>
       </div>
     );
@@ -124,10 +128,8 @@ export function BookFlow() {
       {/* ── Step 1: time ─────────────────────────────────────── */}
       {step === "time" && (
         <div className="mt-6">
-          <h2 className="text-lg font-semibold text-sapphire">Pick a time</h2>
-          <p className="mt-1 text-sm leading-relaxed text-steel">
-            Choose a slot that suits you. Times are shown in your local timezone.
-          </p>
+          <h2 className="text-lg font-semibold text-sapphire">{t.book.pickTimeTitle}</h2>
+          <p className="mt-1 text-sm leading-relaxed text-steel">{t.book.pickTimeBody}</p>
           <div className="mt-5">
             <WeekCalendar
               timeZone={tz}
@@ -144,10 +146,10 @@ export function BookFlow() {
       {step === "details" && (
         <div className="mt-6">
           <SlotReminder label={slot ? slotLabel(slot) : ""} onChange={() => setStep("time")} />
-          <h2 className="mt-6 text-lg font-semibold text-sapphire">Your details</h2>
+          <h2 className="mt-6 text-lg font-semibold text-sapphire">{t.book.yourDetails}</h2>
           <form className="mt-4 space-y-5" onSubmit={onSubmitDetails} noValidate>
-            <Field label="Full name" name="full_name" placeholder="Your name" autoComplete="name" required />
-            <Field label="Email" name="email" type="email" placeholder="you@company.com" autoComplete="email" required />
+            <Field label={t.book.fullName} name="full_name" placeholder={t.book.fullNamePlaceholder} autoComplete="name" required />
+            <Field label={t.book.emailLabel} name="email" type="email" placeholder={t.book.emailPlaceholder} autoComplete="email" required />
 
             {/* honeypot */}
             <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 opacity-0" />
@@ -164,7 +166,7 @@ export function BookFlow() {
               disabled={submitting}
               className="focus-brand glow-cta w-full rounded-md bg-brass px-6 py-3.5 text-base font-semibold text-midnight shadow-md transition-all hover:brightness-95 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {submitting ? "Preparing payment…" : "Continue"}
+              {submitting ? t.book.preparingPayment : t.book.continue}
             </button>
           </form>
         </div>
@@ -177,8 +179,8 @@ export function BookFlow() {
 
           {/* first time price is shown */}
           <div className="mt-5 flex items-baseline justify-between rounded-md border border-cloud/70 bg-white/60 px-4 py-3">
-            <span className="font-mono text-[11px] uppercase tracking-wide text-steel">Total</span>
-            <span className="text-lg font-semibold text-sapphire">${payment.amount_usd} USDT</span>
+            <span className="font-mono text-[11px] uppercase tracking-wide text-steel">{t.book.total}</span>
+            <span className="text-lg font-semibold text-sapphire" dir="ltr">${payment.amount_usd} USDT</span>
           </div>
 
           <div className="mt-5">
@@ -187,39 +189,37 @@ export function BookFlow() {
 
           <div className="mt-5 flex flex-wrap gap-3">
             <span className="rounded-md bg-white/70 px-3 py-1.5 font-mono text-xs text-steel">
-              Send <span className="ml-1 font-semibold text-midnight">{payment.pay_amount} USDT</span>
+              {t.book.send} <span className="ml-1 font-semibold text-midnight" dir="ltr">{payment.pay_amount} USDT</span>
             </span>
             <span className="rounded-md bg-white/70 px-3 py-1.5 font-mono text-xs text-steel">
-              Network <span className="ml-1 font-semibold text-midnight">{payment.network}</span>
+              {t.book.network} <span className="ml-1 font-semibold text-midnight" dir="ltr">{payment.network}</span>
             </span>
           </div>
 
           <div className="mt-6 flex flex-col items-center">
             <div className="rounded-xl border border-cloud bg-white p-3 shadow-sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={payment.qr} alt="Payment QR code" className="h-44 w-44" />
+              <img src={payment.qr} alt={t.book.qrAlt} className="h-44 w-44" />
             </div>
-            <p className="mt-3 font-mono text-[11px] uppercase tracking-wide text-steel/70">Scan to pay</p>
+            <p className="mt-3 font-mono text-[11px] uppercase tracking-wide text-steel/70">{t.book.scanToPay}</p>
           </div>
 
           <div className="mt-6">
             <p className="mb-2 font-mono text-[11px] font-medium uppercase tracking-wide text-steel">
-              Or send to this address
+              {t.book.orSendAddress}
             </p>
-            <CopyField value={payment.pay_address} ariaLabel="Copy payment address" />
+            <CopyField value={payment.pay_address} ariaLabel={t.book.copyAddressAria} />
           </div>
 
           <div className="mt-6 flex items-start gap-3 rounded-md border border-ember/30 bg-ember/8 p-4">
             <svg className="mt-0.5 h-5 w-5 shrink-0 text-ember" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /><path d="M12 9v4M12 17h.01" /></svg>
             <p className="text-sm leading-relaxed text-midnight">
-              <strong className="font-bold">Send only USDT on the TRC20 network.</strong> Any other
-              token or network means the funds cannot be recovered.
+              <strong className="font-bold">{t.book.warnStrong}</strong>{t.book.warnRest}
             </p>
           </div>
 
           <p className="mt-6 text-center text-xs leading-relaxed text-steel/70">
-            This page updates on its own once your transfer lands. Your meeting link is emailed
-            automatically the moment payment is confirmed.
+            {t.book.autoUpdateNote}
           </p>
         </div>
       )}
@@ -228,10 +228,11 @@ export function BookFlow() {
 }
 
 function Stepper({ step }: { step: Step }) {
+  const { t } = useLanguage();
   const items: { key: Step; label: string }[] = [
-    { key: "time", label: "Time" },
-    { key: "details", label: "Details" },
-    { key: "payment", label: "Payment" },
+    { key: "time", label: t.book.stepTime },
+    { key: "details", label: t.book.stepDetails },
+    { key: "payment", label: t.book.stepPayment },
   ];
   const order: Step[] = ["time", "details", "payment"];
   const current = order.indexOf(step);
@@ -262,11 +263,12 @@ function Stepper({ step }: { step: Step }) {
 }
 
 function SlotReminder({ label, onChange }: { label: string; onChange?: () => void }) {
+  const { t } = useLanguage();
   return (
     <div className="flex items-center justify-between gap-3 rounded-md border border-teal/25 bg-teal/[0.06] px-4 py-3">
       <div className="min-w-0">
-        <p className="font-mono text-[10px] uppercase tracking-wide text-teal">Your session</p>
-        <p className="mt-0.5 truncate text-sm font-medium text-midnight">{label || "—"}</p>
+        <p className="font-mono text-[10px] uppercase tracking-wide text-teal">{t.book.yourSession}</p>
+        <p className="mt-0.5 truncate text-sm font-medium text-midnight" dir="ltr">{label || "—"}</p>
       </div>
       {onChange && (
         <button
@@ -275,7 +277,7 @@ function SlotReminder({ label, onChange }: { label: string; onChange?: () => voi
           data-sound="nav"
           className="focus-brand shrink-0 rounded border border-sapphire/20 bg-white/70 px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-wide text-sapphire transition-colors hover:bg-white"
         >
-          Change
+          {t.book.change}
         </button>
       )}
     </div>
@@ -283,11 +285,12 @@ function SlotReminder({ label, onChange }: { label: string; onChange?: () => voi
 }
 
 function StatusIndicator({ status }: { status: PaymentStatus }) {
+  const { t } = useLanguage();
   const map: Record<PaymentStatus, { label: string; dot: string; text: string; pulse: boolean }> = {
-    waiting: { label: "Waiting for payment…", dot: "bg-brass", text: "text-[#8a6d1f]", pulse: true },
-    confirming: { label: "Confirming…", dot: "bg-slate-indigo", text: "text-slate-indigo", pulse: true },
-    confirmed: { label: "Confirmed", dot: "bg-teal", text: "text-teal", pulse: false },
-    failed: { label: "Payment failed — please try again", dot: "bg-ember", text: "text-ember", pulse: false },
+    waiting: { label: t.book.statusWaiting, dot: "bg-brass", text: "text-[#8a6d1f]", pulse: true },
+    confirming: { label: t.book.statusConfirming, dot: "bg-slate-indigo", text: "text-slate-indigo", pulse: true },
+    confirmed: { label: t.book.statusConfirmed, dot: "bg-teal", text: "text-teal", pulse: false },
+    failed: { label: t.book.statusFailed, dot: "bg-ember", text: "text-ember", pulse: false },
   };
   const s = map[status];
   return (

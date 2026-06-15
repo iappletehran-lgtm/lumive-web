@@ -4,10 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell, AuthField } from "@/components/auth/AuthShell";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 type Status = "idle" | "submitting" | "done";
 
 export default function RegisterPage() {
+  const { t } = useLanguage();
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
@@ -55,22 +57,22 @@ export default function RegisterPage() {
 
   if (status === "done") {
     return (
-      <AuthShell eyebrow="One more step" title="Check your email to confirm.">
+      <AuthShell logoLabel={t.auth.logoLabel} eyebrow={t.auth.confirmEyebrow} title={t.auth.confirmTitle}>
         <div className="text-center">
           <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal/15 text-xl text-teal">
             ✓
           </span>
           <p className="mt-5 leading-relaxed text-steel">
-            We sent a confirmation link to{" "}
-            <span className="font-medium text-midnight">{email}</span>. Open it to
-            activate your account, then sign in.
+            {t.auth.confirmBodyPre}
+            <span className="font-medium text-midnight">{email}</span>
+            {t.auth.confirmBodyPost}
           </p>
           <Link
             href="/login"
             data-sound="nav"
             className="focus-brand mt-7 inline-flex w-full items-center justify-center rounded-md border border-sapphire/25 bg-white/60 px-6 py-3.5 text-base font-semibold text-sapphire transition-all hover:bg-white"
           >
-            Back to sign in
+            {t.auth.backToSignIn}
           </Link>
         </div>
       </AuthShell>
@@ -79,42 +81,43 @@ export default function RegisterPage() {
 
   return (
     <AuthShell
-      eyebrow="Create your account"
+      logoLabel={t.auth.logoLabel}
+      eyebrow={t.auth.registerEyebrow}
       title={
         <>
-          Start with <span className="gradient-text">Lumive.</span>
+          {t.auth.registerTitlePre}<span className="gradient-text">{t.auth.registerTitleBrand}</span>
         </>
       }
-      subtitle="One account for your projects and the 90-day build."
+      subtitle={t.auth.registerSubtitle}
       footer={
         <>
-          Already have an account?{" "}
+          {t.auth.registerFooterPre}
           <Link href="/login" className="font-medium text-sapphire hover:text-teal">
-            Sign in
+            {t.auth.registerFooterLink}
           </Link>
         </>
       }
     >
       <form className="space-y-5" onSubmit={onSubmit} noValidate>
         <AuthField
-          label="Full name"
+          label={t.auth.fullName}
           name="full_name"
-          placeholder="Your name"
+          placeholder={t.auth.fullNamePlaceholder}
           autoComplete="name"
           required
         />
         <AuthField
-          label="Company"
+          label={t.auth.company}
           name="company"
-          placeholder="Company name"
+          placeholder={t.auth.companyPlaceholder}
           autoComplete="organization"
           required
         />
         <AuthField
-          label="Work email"
+          label={t.auth.workEmail}
           name="email"
           type="email"
-          placeholder="you@company.com"
+          placeholder={t.auth.emailPlaceholder}
           autoComplete="email"
           required
         />
@@ -123,7 +126,7 @@ export default function RegisterPage() {
             htmlFor="a-password"
             className="font-mono text-[11px] font-medium uppercase tracking-wide text-steel"
           >
-            Password
+            {t.auth.password}
           </label>
           <input
             id="a-password"
@@ -132,7 +135,7 @@ export default function RegisterPage() {
             required
             minLength={8}
             autoComplete="new-password"
-            placeholder="At least 8 characters"
+            placeholder={t.auth.newPasswordPlaceholder}
             className="mt-2 w-full rounded-md border border-cloud bg-white/70 px-4 py-3 text-sm text-midnight placeholder:text-steel/50 focus:border-sapphire focus:bg-white focus:outline-none"
           />
         </div>
@@ -149,11 +152,11 @@ export default function RegisterPage() {
           disabled={status === "submitting"}
           className="focus-brand glow-cta w-full rounded-md bg-brass px-6 py-3.5 text-base font-semibold text-midnight shadow-md transition-all hover:brightness-95 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {status === "submitting" ? "Creating account…" : "Create account"}
+          {status === "submitting" ? t.auth.creatingAccount : t.auth.createAccount}
         </button>
 
         <p className="text-center text-xs leading-relaxed text-steel/70">
-          We use your details only to run your projects. We never share them.
+          {t.auth.privacyNote}
         </p>
       </form>
     </AuthShell>
