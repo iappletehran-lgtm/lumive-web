@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import { callLumi, type LumiMessage } from "@/lib/assistant/lumi";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
+
+const FALLBACK_REPLY =
+  "I'm having trouble responding right now. You can book a 30-minute strategy call at /book and the team will help directly.";
 
 /**
  * Lumi chat endpoint. Receives the conversation history and returns Lumi's next
  * reply from OpenRouter (system prompt applied server-side). Degrades to a
  * brand-safe fallback when OpenRouter is unavailable, so the widget never breaks.
+ *
+ * Conversations are logged to chat_logs (service-role) as a side effect — fired
+ * and forgotten so it never adds latency to, or breaks, the chat response.
  */
 export async function POST(req: NextRequest) {
-  let body: { messages?: LumiMessage[]; lang?: string };
+  let body: { messages?: LumiMessage[]; lang?: string; session_id?: string };
   try {
     body = await req.json();
   } catch {
@@ -26,14 +35,61 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No messages." }, { status: 400 });
   }
 
-  const reply = await callLumi(messages, body.lang === "fa" ? "fa" : undefined);
+  const language: "en" | "fa" = body.lang === "fa" ? "fa" : "en";
+  const sessionId = typeof body.session_id === "string" ? body.session_id : "";
 
-  if (!reply) {
-    return NextResponse.json({
-      reply:
-        "I'm having trouble responding right now. You can book a 30-minute strategy call at /book and the team will help directly.",
-    });
+  const reply = await callLumi(messages, language === "fa" ? "fa" : undefined);
+  const replyText = reply || FALLBACK_REPLY;
+
+  // Best-effort conversation log — never blocks the response. waitUntil keeps the
+  // function alive until the write finishes (so it isn't cut off when the serverless
+  // function freezes after responding), without delaying the reply to the client.
+  waitUntil(
+    logConversation({
+      sessionId,
+      language,
+      messages: [...messages, { role: "assistant", content: replyText }],
+    })
+  );
+
+  return NextResponse.json({ reply: replyText });
+}
+
+/**
+ * Upsert the full conversation into chat_logs, keyed on session_id. Relies on the
+ * UNIQUE index chat_logs_session_key (session_id) for an atomic native upsert —
+ * no select-then-write race. created_at is omitted so it is preserved on update.
+ * Entirely best-effort: silently no-ops when Supabase env vars are absent, and
+ * swallows any error.
+ */
+async function logConversation(params: {
+  sessionId: string;
+  language: "en" | "fa";
+  messages: LumiMessage[];
+}) {
+  const { sessionId, language, messages } = params;
+  if (!sessionId) return;
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return;
+
+  // Resolve the visitor's user id from the auth cookie (null when anonymous).
+  let userId: string | null = null;
+  try {
+    const { data } = await createClient().auth.getUser();
+    userId = data.user?.id ?? null;
+  } catch {
+    /* anonymous visitor — leave userId null */
   }
 
-  return NextResponse.json({ reply });
+  try {
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("chat_logs")
+      .upsert(
+        { session_id: sessionId, language, user_id: userId, messages, updated_at: new Date().toISOString() },
+        { onConflict: "session_id" }
+      );
+    if (error) throw error;
+  } catch (err) {
+    console.error("[chat] conversation log failed:", (err as Error).message);
+  }
 }

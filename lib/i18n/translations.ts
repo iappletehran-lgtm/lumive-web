@@ -418,6 +418,37 @@ const en = {
     linkLabel: "Link:",
     confirmedDefault:
       "Confirmed — the standard Cal.com link was emailed. Set a custom link above to override.",
+    chatLogs: {
+      title: "Chat Logs",
+      showing: "showing",
+      of: "of",
+      // filters
+      from: "From",
+      to: "To",
+      language: "Language",
+      all: "All",
+      userType: "User",
+      typeLoggedIn: "Logged-in",
+      typeGuest: "Guest",
+      searchPlaceholder: "Search messages…",
+      clear: "Clear",
+      exportCsv: "Export CSV",
+      // table
+      thDateTime: "Date / Time",
+      thLang: "Language",
+      thUser: "User",
+      thCount: "Messages",
+      thPreview: "First message",
+      thView: "View",
+      view: "View",
+      hide: "Hide",
+      guest: "Guest",
+      noMatch: "No conversations match the filters.",
+      empty: "No conversations logged yet.",
+      // expanded conversation
+      roleVisitor: "Visitor",
+      roleLumi: "Lumi",
+    },
   },
   lab: {
     // game section
@@ -889,6 +920,37 @@ const fa: Dict = {
     linkLabel: "پیوند:",
     confirmedDefault:
       "تأیید شد — پیوند استاندارد Cal.com ایمیل شد. برای بازنویسی، یک پیوند سفارشی در بالا تنظیم کنید.",
+    chatLogs: {
+      title: "گزارش گفتگوها",
+      showing: "نمایش",
+      of: "از",
+      // filters
+      from: "از تاریخ",
+      to: "تا تاریخ",
+      language: "زبان",
+      all: "همه",
+      userType: "کاربر",
+      typeLoggedIn: "ثبت‌شده",
+      typeGuest: "مهمان",
+      searchPlaceholder: "جستجو در پیام‌ها…",
+      clear: "پاک کردن",
+      exportCsv: "خروجی CSV",
+      // table
+      thDateTime: "تاریخ / زمان",
+      thLang: "زبان",
+      thUser: "کاربر",
+      thCount: "پیام‌ها",
+      thPreview: "نخستین پیام",
+      thView: "مشاهده",
+      view: "مشاهده",
+      hide: "بستن",
+      guest: "مهمان",
+      noMatch: "گفتگویی با این فیلترها یافت نشد.",
+      empty: "هنوز گفتگویی ثبت نشده است.",
+      // expanded conversation
+      roleVisitor: "بازدیدکننده",
+      roleLumi: "لومی",
+    },
   },
   lab: {
     // game section

@@ -26,6 +26,13 @@ export function LumiWidget() {
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
+  // One stable id per conversation, generated when the widget first opens; sent
+  // with every message so the server can group the turns into one chat_logs row.
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open && !sessionId) setSessionId(crypto.randomUUID());
+  }, [open, sessionId]);
 
   // Keep the seeded greeting in the active language until the visitor speaks.
   useEffect(() => {
@@ -65,11 +72,15 @@ export function LumiWidget() {
       setInput("");
       setTyping(true);
 
+      // Ensure a session id even if the open-effect has not run yet.
+      const sid = sessionId ?? crypto.randomUUID();
+      if (!sessionId) setSessionId(sid);
+
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ messages: history.map(({ role, content }) => ({ role, content })), lang }),
+          body: JSON.stringify({ messages: history.map(({ role, content }) => ({ role, content })), lang, session_id: sid }),
         });
         const data = await res.json().catch(() => ({}));
         const reply: string = data.reply || t.chat.fallback;
@@ -82,7 +93,7 @@ export function LumiWidget() {
         inputRef.current?.focus();
       }
     },
-    [messages, typing, lang, t.chat.fallback]
+    [messages, typing, lang, sessionId, t.chat.fallback]
   );
 
   // Public pages only.

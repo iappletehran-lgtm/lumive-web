@@ -6,6 +6,7 @@ import { promoteToClient, saveBookingLink, resendBookingEmail } from "@/app/admi
 import { formatSlot, type PaymentStatus } from "@/lib/booking";
 import type { Role } from "@/lib/roles";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { ChatLogsSection, type ChatLogRow } from "./ChatLogsSection";
 
 export type UserRow = {
   id: string;
@@ -62,6 +63,7 @@ export function AdminConsole({
   counts,
   open,
   businessTz,
+  chatLogs,
 }: {
   email?: string;
   users: UserRow[];
@@ -69,6 +71,7 @@ export function AdminConsole({
   counts: Record<string, number>;
   open: number;
   businessTz: string;
+  chatLogs: ChatLogRow[];
 }) {
   const { t } = useLanguage();
 
@@ -188,6 +191,9 @@ export function AdminConsole({
             </div>
           )}
         </section>
+
+        {/* ── Chat Logs ──────────────────────────────────────── */}
+        <ChatLogsSection logs={chatLogs} />
       </div>
     </DashboardShell>
   );
