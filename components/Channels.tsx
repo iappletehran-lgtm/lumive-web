@@ -54,11 +54,11 @@ export function ChannelButtons({
         target="_blank"
         rel="noopener noreferrer"
         data-sound="cta"
-        aria-label="Talk to Lumive AI on WhatsApp"
+        aria-label={t.channels.whatsapp}
         className={`${base} ${primary}`}
       >
         <WhatsAppIcon className="h-[18px] w-[18px]" />
-        Talk on WhatsApp
+        {t.channels.whatsapp}
       </a>
       <a
         href={tgLink()}
@@ -96,8 +96,8 @@ export function ChannelIcons({
         href={waLink()}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Chat with Lumive AI on WhatsApp"
-        title="Chat with Lumive AI on WhatsApp"
+        aria-label={t.channels.whatsapp}
+        title={t.channels.whatsapp}
         className={`${btn} ${styles}`}
       >
         <WhatsAppIcon className="h-4 w-4" />

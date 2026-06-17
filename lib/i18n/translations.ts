@@ -14,6 +14,7 @@ const en = {
     startOver: "Start over",
   },
   channels: {
+    whatsapp: "Talk on WhatsApp",
     telegram: "Chat with Lumi on Telegram",
   },
   nav: {
@@ -519,6 +520,7 @@ const fa: Dict = {
     startOver: "شروع دوباره",
   },
   channels: {
+    whatsapp: "تماس در واتساپ",
     telegram: "گفتگو با لومی در تلگرام",
   },
   nav: {
