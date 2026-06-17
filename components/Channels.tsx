@@ -1,4 +1,7 @@
+"use client";
+
 import { waLink, tgLink } from "@/lib/contact";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export function WhatsAppIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
@@ -29,6 +32,7 @@ export function ChannelButtons({
   tone?: Tone;
   className?: string;
 }) {
+  const { t } = useLanguage();
   const base =
     "focus-brand inline-flex items-center gap-2.5 rounded-md px-5 py-2.5 text-sm font-semibold transition-all";
 
@@ -61,11 +65,11 @@ export function ChannelButtons({
         target="_blank"
         rel="noopener noreferrer"
         data-sound="nav"
-        aria-label="Chat with Lumive AI on Telegram"
+        aria-label={t.channels.telegram}
         className={`${base} ${secondary}`}
       >
         <TelegramIcon className="h-[18px] w-[18px]" />
-        Chat on Telegram
+        {t.channels.telegram}
       </a>
     </div>
   );
@@ -79,6 +83,7 @@ export function ChannelIcons({
   tone?: Tone;
   className?: string;
 }) {
+  const { t } = useLanguage();
   const btn =
     "focus-brand flex h-8 w-8 items-center justify-center rounded-full transition-colors";
   const styles =
@@ -101,8 +106,8 @@ export function ChannelIcons({
         href={tgLink()}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Chat with Lumive AI on Telegram"
-        title="Chat with Lumive AI on Telegram"
+        aria-label={t.channels.telegram}
+        title={t.channels.telegram}
         className={`${btn} ${styles}`}
       >
         <TelegramIcon className="h-4 w-4" />

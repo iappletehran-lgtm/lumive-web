@@ -11,8 +11,8 @@ export const CONTACT = {
    * waLink() sanitizes defensively, but store it clean.
    */
   whatsappNumber: "905313352839", // Turkey +90 531 335 28 39
-  /** Telegram username without the "@". */
-  telegramHandle: "Lumiveai", // https://t.me/Lumiveai
+  /** Telegram username without the "@". Points at the Lumi bot, not a person. */
+  telegramHandle: "LumiveAI_bot", // https://t.me/LumiveAI_bot
   email: "hello@lumive.ai", // ⚠️ PLACEHOLDER
 } as const;
 

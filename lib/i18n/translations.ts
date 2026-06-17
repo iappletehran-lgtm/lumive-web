@@ -13,6 +13,9 @@ const en = {
     login: "Login",
     startOver: "Start over",
   },
+  channels: {
+    telegram: "Chat with Lumi on Telegram",
+  },
   nav: {
     services: "Services",
     howItWorks: "How It Works",
@@ -514,6 +517,9 @@ const fa: Dict = {
     bookCall30: "رزرو یک تماس 30 دقیقه‌ای",
     login: "ورود",
     startOver: "شروع دوباره",
+  },
+  channels: {
+    telegram: "گفتگو با لومی در تلگرام",
   },
   nav: {
     services: "خدمات",
