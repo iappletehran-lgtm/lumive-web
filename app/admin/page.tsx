@@ -2,6 +2,7 @@ import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AdminConsole, type UserRow, type Booking } from "@/components/admin/AdminConsole";
 import type { ChatLogRow, ChatMessage } from "@/components/admin/ChatLogsSection";
+import type { LeadRow } from "@/components/admin/LeadsSection";
 import { BUSINESS_TZ } from "@/lib/booking";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export default async function AdminPage() {
 
   // Service-role reads — bypass RLS. Safe: requireRole("admin") proved the session.
   const admin = createAdminClient();
-  const [{ data: usersData }, { data: bookingsData }, { data: logsData }] = await Promise.all([
+  const [{ data: usersData }, { data: bookingsData }, { data: logsData }, { data: leadsData }] = await Promise.all([
     admin
       .from("profiles")
       .select("id, full_name, company, role, created_at")
@@ -31,6 +32,11 @@ export default async function AdminPage() {
     admin
       .from("chat_logs")
       .select("id, created_at, language, user_id, messages")
+      .order("created_at", { ascending: false })
+      .limit(1000),
+    admin
+      .from("leads")
+      .select("id, full_name, email, phone_number, company, industry, message, source, language, contacted, created_at")
       .order("created_at", { ascending: false })
       .limit(1000),
   ]);
@@ -65,6 +71,8 @@ export default async function AdminPage() {
     messages: Array.isArray(l.messages) ? l.messages : [],
   }));
 
+  const leads = (leadsData ?? []) as LeadRow[];
+
   return (
     <AdminConsole
       email={profile.email}
@@ -74,6 +82,7 @@ export default async function AdminPage() {
       open={open}
       businessTz={BUSINESS_TZ}
       chatLogs={chatLogs}
+      leads={leads}
     />
   );
 }

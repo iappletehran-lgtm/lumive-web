@@ -7,6 +7,7 @@ import { formatSlot, type PaymentStatus } from "@/lib/booking";
 import type { Role } from "@/lib/roles";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { ChatLogsSection, type ChatLogRow } from "./ChatLogsSection";
+import { LeadsSection, type LeadRow } from "./LeadsSection";
 
 export type UserRow = {
   id: string;
@@ -64,6 +65,7 @@ export function AdminConsole({
   open,
   businessTz,
   chatLogs,
+  leads,
 }: {
   email?: string;
   users: UserRow[];
@@ -72,6 +74,7 @@ export function AdminConsole({
   open: number;
   businessTz: string;
   chatLogs: ChatLogRow[];
+  leads: LeadRow[];
 }) {
   const { t } = useLanguage();
 
@@ -191,6 +194,9 @@ export function AdminConsole({
             </div>
           )}
         </section>
+
+        {/* ── Leads ──────────────────────────────────────────── */}
+        <LeadsSection leads={leads} />
 
         {/* ── Chat Logs ──────────────────────────────────────── */}
         <ChatLogsSection logs={chatLogs} />

@@ -3,6 +3,15 @@ import { waitUntil } from "@vercel/functions";
 import { callLumi, type LumiMessage } from "@/lib/assistant/lumi";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendTelegramMessage, detectLang } from "@/lib/telegram";
+import {
+  LEAD_ASK,
+  captureLead,
+  conversationSummary,
+  detectBookingSignal,
+  extractLead,
+  lastAssistantWasLeadAsk,
+  leadAlreadyAsked,
+} from "@/lib/assistant/leads";
 
 export const runtime = "nodejs";
 
@@ -62,11 +71,34 @@ export async function POST(req: NextRequest) {
       reply = START_MESSAGE;
     } else if (text.startsWith("/help")) {
       reply = HELP_MESSAGE;
+    } else if (lastAssistantWasLeadAsk(stored)) {
+      // The previous bot turn asked for contact details — capture them now.
+      const lead = extractLead(text);
+      if (lead.email || lead.phone) {
+        waitUntil(
+          captureLead({
+            name: lead.name,
+            email: lead.email,
+            phone: lead.phone,
+            source: "telegram",
+            language: lang,
+            message: conversationSummary([...stored, userMsg]),
+          })
+        );
+      }
+      const base = memory.get(key) ?? stored.slice(-COLD_SEED);
+      const context = [...base, userMsg].slice(-CONTEXT_WINDOW);
+      reply = (await callLumi(context, lang === "fa" ? "fa" : undefined)) || FALLBACK[lang];
     } else {
       // Context: warm memory (last 10) if present, else last 5 from chat_logs.
       const base = memory.get(key) ?? stored.slice(-COLD_SEED);
       const context = [...base, userMsg].slice(-CONTEXT_WINDOW);
       reply = (await callLumi(context, lang === "fa" ? "fa" : undefined)) || FALLBACK[lang];
+      // Natural lead-ask on a booking signal, at most once per conversation.
+      const userMsgCount = stored.filter((m) => m.role === "user").length + 1;
+      if (detectBookingSignal(text, reply, userMsgCount) && !leadAlreadyAsked(stored)) {
+        reply = `${reply}\n\n${LEAD_ASK[lang]}`;
+      }
     }
 
     await sendTelegramMessage(chatId, reply);

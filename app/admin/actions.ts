@@ -87,3 +87,22 @@ export async function resendBookingEmail(formData: FormData) {
 
   revalidatePath("/admin");
 }
+
+/**
+ * Mark a captured lead as contacted. Admin-guarded; service-role write (leads is
+ * RLS-locked). Idempotent — re-marking just refreshes contacted_at.
+ */
+export async function markLeadContacted(formData: FormData) {
+  await requireRole("admin");
+
+  const id = String(formData.get("id") || "");
+  if (!id) return;
+
+  const admin = createAdminClient();
+  await admin
+    .from("leads")
+    .update({ contacted: true, contacted_at: new Date().toISOString() })
+    .eq("id", id);
+
+  revalidatePath("/admin");
+}

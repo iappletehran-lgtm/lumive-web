@@ -74,6 +74,9 @@ function layout(preheader: string, body: string): string {
 
 const firstNameOf = (name?: string | null) => (name || "").trim().split(/\s+/)[0] || "there";
 
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
 // ── ① Booking confirmation ────────────────────────────────────
 export async function sendBookingConfirmation(args: {
   email: string;
@@ -154,5 +157,56 @@ export async function sendClientPromotion(args: { email: string; name?: string |
     subject: "Your Lumive AI account is ready",
     html: layout("Your account has been approved.", body),
     text,
+  });
+}
+
+// ── ④ New-lead notification (to the admin) ────────────────────
+export async function sendLeadNotification(args: {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  company?: string | null;
+  source?: string | null;
+  language?: string | null;
+  message?: string | null;
+}): Promise<{ sent: boolean; id?: string }> {
+  const to = process.env.LEAD_TO_EMAIL || "hello@lumive.ai";
+  const name = (args.name || "").trim() || "Unknown";
+  const date = new Date().toLocaleString("en-GB", { timeZone: BUSINESS_TZ });
+  const row = (label: string, val?: string | null) =>
+    val
+      ? `<tr><td style="padding:5px 14px 5px 0;color:${C.steel};font-size:13px;white-space:nowrap;">${label}</td><td style="padding:5px 0;color:${C.midnight};font-size:14px;">${escapeHtml(val)}</td></tr>`
+      : "";
+
+  const body = `
+    <p style="margin:0 0 16px;">A new lead came in from Lumi.</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 8px;border-collapse:collapse;">
+      ${row("Name", name)}
+      ${row("Email", args.email)}
+      ${row("Phone", args.phone)}
+      ${row("Company", args.company)}
+      ${row("Source", args.source || "chat")}
+      ${row("Language", args.language || "en")}
+      ${row("Date", date)}
+    </table>
+    ${args.message ? `<p style="margin:16px 0 4px;color:${C.steel};font-size:11px;letter-spacing:1px;text-transform:uppercase;">First message</p><p style="margin:0;padding:12px 16px;background:${C.mist};border-radius:8px;">${escapeHtml(args.message)}</p>` : ""}`;
+
+  const text =
+    `New lead from Lumi\n\n` +
+    `Name: ${name}\n` +
+    `Email: ${args.email || "—"}\n` +
+    `Phone: ${args.phone || "—"}\n` +
+    `Company: ${args.company || "—"}\n` +
+    `Source: ${args.source || "chat"}\n` +
+    `Language: ${args.language || "en"}\n` +
+    `Date: ${date}\n\n` +
+    `First message:\n${args.message || "—"}`;
+
+  return sendEmail({
+    to,
+    subject: `New lead from Lumi — ${name}`,
+    html: layout("New lead from Lumi", body),
+    text,
+    replyTo: args.email || undefined,
   });
 }

@@ -3,6 +3,15 @@ import { waitUntil } from "@vercel/functions";
 import { callLumi, type LumiMessage } from "@/lib/assistant/lumi";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  LEAD_ASK,
+  captureLead,
+  conversationSummary,
+  detectBookingSignal,
+  extractLead,
+  lastAssistantWasLeadAsk,
+  leadAlreadyAsked,
+} from "@/lib/assistant/leads";
 
 export const runtime = "nodejs";
 
@@ -38,8 +47,33 @@ export async function POST(req: NextRequest) {
   const language: "en" | "fa" = body.lang === "fa" ? "fa" : "en";
   const sessionId = typeof body.session_id === "string" ? body.session_id : "";
 
-  const reply = await callLumi(messages, language === "fa" ? "fa" : undefined);
-  const replyText = reply || FALLBACK_REPLY;
+  const userText = messages[messages.length - 1]?.content || "";
+  const userMsgCount = messages.filter((m) => m.role === "user").length;
+
+  let replyText: string;
+  if (lastAssistantWasLeadAsk(messages)) {
+    // This message is the visitor's response to our lead-ask — capture it.
+    const lead = extractLead(userText);
+    if (lead.email || lead.phone) {
+      waitUntil(
+        captureLead({
+          name: lead.name,
+          email: lead.email,
+          phone: lead.phone,
+          source: "chat",
+          language,
+          message: conversationSummary(messages),
+        })
+      );
+    }
+    replyText = (await callLumi(messages, language === "fa" ? "fa" : undefined)) || FALLBACK_REPLY;
+  } else {
+    replyText = (await callLumi(messages, language === "fa" ? "fa" : undefined)) || FALLBACK_REPLY;
+    // Natural lead-ask on a booking signal, at most once per conversation.
+    if (detectBookingSignal(userText, replyText, userMsgCount) && !leadAlreadyAsked(messages)) {
+      replyText = `${replyText}\n\n${LEAD_ASK[language]}`;
+    }
+  }
 
   // Best-effort conversation log — never blocks the response. waitUntil keeps the
   // function alive until the write finishes (so it isn't cut off when the serverless
