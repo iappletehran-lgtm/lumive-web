@@ -20,6 +20,11 @@ const en = {
   voice: {
     title: "Talk to Lumi",
     subtitle: "Ask anything. No forms. Just speak.",
+    tapToSpeak: "Tap to speak",
+    connecting: "Connecting...",
+    listening: "Listening...",
+    speaking: "Speaking...",
+    label: "AI Voice Assistant",
   },
   nav: {
     services: "Services",
@@ -556,6 +561,11 @@ const fa: Dict = {
   voice: {
     title: "با لومی صحبت کن",
     subtitle: "هر سوالی داری بپرس. فقط صحبت کن.",
+    tapToSpeak: "برای صحبت بزنید",
+    connecting: "در حال اتصال...",
+    listening: "در حال شنیدن...",
+    speaking: "در حال صحبت...",
+    label: "دستیار صوتی هوش مصنوعی",
   },
   nav: {
     services: "خدمات",
