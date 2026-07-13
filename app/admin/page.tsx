@@ -3,6 +3,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { AdminConsole, type UserRow, type Booking } from "@/components/admin/AdminConsole";
 import type { ChatLogRow, ChatMessage } from "@/components/admin/ChatLogsSection";
 import type { LeadRow } from "@/components/admin/LeadsSection";
+import type { ProjectRow, ClientOption } from "@/components/admin/ProjectsSection";
+import type { DeliverableRow } from "@/components/admin/DeliverablesSection";
+import type { MemoryRow } from "@/components/admin/MemoriesSection";
+import type { AdminStats } from "@/components/admin/AnalyticsSection";
 import { BUSINESS_TZ } from "@/lib/booking";
 
 export const dynamic = "force-dynamic";
@@ -21,28 +25,47 @@ export default async function AdminPage() {
 
   // Service-role reads — bypass RLS. Safe: requireRole("admin") proved the session.
   const admin = createAdminClient();
-  const [{ data: usersData }, { data: bookingsData }, { data: logsData }, { data: leadsData }, { data: memoriesData }] =
-    await Promise.all([
-      admin
-        .from("profiles")
-        .select("id, full_name, company, role, created_at")
-        .order("created_at", { ascending: false }),
-      admin
-        .from("bookings")
-        .select("id, full_name, email, selected_slot, payment_id, payment_status, booking_link, created_at")
-        .order("created_at", { ascending: false }),
-      admin
-        .from("chat_logs")
-        .select("id, session_id, created_at, language, user_id, messages")
-        .order("created_at", { ascending: false })
-        .limit(1000),
-      admin
-        .from("leads")
-        .select("id, full_name, email, phone_number, company, industry, message, source, language, contacted, created_at")
-        .order("created_at", { ascending: false })
-        .limit(1000),
-      admin.from("memories").select("session_id, summary").limit(1000),
-    ]);
+  const [
+    { data: usersData },
+    { data: bookingsData },
+    { data: logsData },
+    { data: leadsData },
+    { data: memoriesData },
+    { data: projectsData },
+    { data: deliverablesData },
+  ] = await Promise.all([
+    admin
+      .from("profiles")
+      .select("id, full_name, company, role, created_at")
+      .order("created_at", { ascending: false }),
+    admin
+      .from("bookings")
+      .select("id, full_name, email, selected_slot, payment_id, payment_status, booking_link, created_at")
+      .order("created_at", { ascending: false }),
+    admin
+      .from("chat_logs")
+      .select("id, session_id, created_at, language, user_id, messages")
+      .order("created_at", { ascending: false })
+      .limit(1000),
+    admin
+      .from("leads")
+      .select("id, full_name, email, phone_number, company, industry, message, source, language, contacted, created_at")
+      .order("created_at", { ascending: false })
+      .limit(1000),
+    admin
+      .from("memories")
+      .select("id, session_id, language, summary, key_facts, created_at")
+      .order("created_at", { ascending: false })
+      .limit(1000),
+    admin
+      .from("projects")
+      .select("id, client_id, title, status, start_date, notes, created_at")
+      .order("created_at", { ascending: false }),
+    admin
+      .from("deliverables")
+      .select("id, project_id, name, file_url, uploaded_at")
+      .order("uploaded_at", { ascending: false }),
+  ]);
 
   const users = (usersData ?? []) as UserRow[];
   const bookings = (bookingsData ?? []) as Booking[];
@@ -66,11 +89,11 @@ export default async function AdminPage() {
       /* email map best-effort — fall back to showing Guest */
     }
   }
+
+  const memories = (memoriesData ?? []) as MemoryRow[];
   // session_id → memory summary, to show a "Has memory" badge on chat logs.
   const memBySession = new Map<string, string>();
-  for (const m of (memoriesData ?? []) as { session_id: string; summary: string | null }[]) {
-    if (m.summary) memBySession.set(m.session_id, m.summary);
-  }
+  for (const m of memories) if (m.summary) memBySession.set(m.session_id, m.summary);
 
   const chatLogs: ChatLogRow[] = rawLogs.map((l) => ({
     id: l.id,
@@ -82,6 +105,24 @@ export default async function AdminPage() {
   }));
 
   const leads = (leadsData ?? []) as LeadRow[];
+  const projects = (projectsData ?? []) as ProjectRow[];
+  const deliverables = (deliverablesData ?? []) as DeliverableRow[];
+
+  // Client options for the projects form + client-name resolution.
+  const clients: ClientOption[] = users.map((u) => ({
+    id: u.id,
+    name: u.full_name || u.company || u.id.slice(0, 8),
+  }));
+
+  // Overview counts. Voice sessions are chat_logs whose session id is prefixed
+  // "voice_" (our voice convention); the rest are text chat / telegram.
+  const voiceSessions = rawLogs.filter((l) => l.session_id.startsWith("voice_")).length;
+  const stats: AdminStats = {
+    leads: leads.length,
+    bookings: bookings.length,
+    chatSessions: rawLogs.length - voiceSessions,
+    voiceSessions,
+  };
 
   return (
     <AdminConsole
@@ -93,6 +134,11 @@ export default async function AdminPage() {
       businessTz={BUSINESS_TZ}
       chatLogs={chatLogs}
       leads={leads}
+      stats={stats}
+      projects={projects}
+      deliverables={deliverables}
+      memories={memories}
+      clients={clients}
     />
   );
 }

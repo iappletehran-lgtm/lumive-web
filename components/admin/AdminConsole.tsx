@@ -8,6 +8,10 @@ import type { Role } from "@/lib/roles";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { ChatLogsSection, type ChatLogRow } from "./ChatLogsSection";
 import { LeadsSection, type LeadRow } from "./LeadsSection";
+import { AnalyticsSection, type AdminStats } from "./AnalyticsSection";
+import { ProjectsSection, type ProjectRow, type ClientOption } from "./ProjectsSection";
+import { DeliverablesSection, type DeliverableRow } from "./DeliverablesSection";
+import { MemoriesSection, type MemoryRow } from "./MemoriesSection";
 
 export type UserRow = {
   id: string;
@@ -66,6 +70,11 @@ export function AdminConsole({
   businessTz,
   chatLogs,
   leads,
+  stats,
+  projects,
+  deliverables,
+  memories,
+  clients,
 }: {
   email?: string;
   users: UserRow[];
@@ -75,8 +84,14 @@ export function AdminConsole({
   businessTz: string;
   chatLogs: ChatLogRow[];
   leads: LeadRow[];
+  stats: AdminStats;
+  projects: ProjectRow[];
+  deliverables: DeliverableRow[];
+  memories: MemoryRow[];
+  clients: ClientOption[];
 }) {
   const { t } = useLanguage();
+  const projectOptions = projects.map((p) => ({ id: p.id, title: p.title }));
 
   const accountWord = users.length === 1 ? t.admin.account : t.admin.accounts;
   const bookingWord = bookings.length === 1 ? t.admin.booking : t.admin.bookings;
@@ -93,6 +108,9 @@ export function AdminConsole({
       email={email}
     >
       <div className="space-y-12">
+        {/* ── Analytics ──────────────────────────────────────── */}
+        <AnalyticsSection stats={stats} />
+
         {/* ── People ─────────────────────────────────────────── */}
         <section>
           <div className="mb-4 flex items-baseline justify-between">
@@ -170,6 +188,13 @@ export function AdminConsole({
         </section>
 
         {/* ── Bookings ───────────────────────────────────────── */}
+        {/* ── Projects ──────────────────────────────────────── */}
+        <ProjectsSection projects={projects} clients={clients} />
+
+        {/* ── Deliverables ──────────────────────────────────── */}
+        <DeliverablesSection deliverables={deliverables} projects={projectOptions} />
+
+        {/* ── Bookings ───────────────────────────────────────── */}
         <section>
           <div className="mb-4 flex items-baseline justify-between">
             <h2 className="text-lg font-semibold text-sapphire">{t.admin.bookingsTitle}</h2>
@@ -200,6 +225,9 @@ export function AdminConsole({
 
         {/* ── Chat Logs ──────────────────────────────────────── */}
         <ChatLogsSection logs={chatLogs} />
+
+        {/* ── Memories ──────────────────────────────────────── */}
+        <MemoriesSection memories={memories} />
       </div>
     </DashboardShell>
   );
