@@ -11,8 +11,13 @@ const ELEVENLABS_AGENT_ID = "agent_1201kxdete4df3ctxck96xhs82qh";
  * "Talk to Lumi" — a voice-first way to reach the assistant, placed above the
  * Contact section. Mist-white surface, bilingual via useLanguage(). The voice
  * experience is the official ElevenLabs Conversational AI widget (it handles mic,
- * speech-to-text, the LLM turn, and speech playback itself). Content-only; reuses
- * existing tokens (no new visual system).
+ * speech-to-text, the LLM turn, and speech playback itself).
+ *
+ * IMPORTANT: the widget renders a `position: fixed` floating button. It must NOT
+ * be nested inside a transformed ancestor (e.g. <Reveal>, which animates via CSS
+ * transform) — a transform makes that ancestor the containing block for fixed
+ * descendants, trapping and clipping the widget inside the section. So the widget
+ * lives OUTSIDE <Reveal> (and any transform), free to anchor to the viewport.
  */
 export function VoiceChat() {
   const { t } = useLanguage();
@@ -29,14 +34,11 @@ export function VoiceChat() {
             </p>
           </div>
         </Reveal>
-        <Reveal delay={120}>
-          <div className="mt-10 flex justify-center">
-            <elevenlabs-convai agent-id={ELEVENLABS_AGENT_ID} />
-          </div>
-        </Reveal>
       </div>
 
-      {/* Loads the custom element; afterInteractive so it never blocks first paint. */}
+      {/* Floating widget — kept outside any transformed wrapper (see note above)
+          so its own position:fixed anchors to the viewport corner. */}
+      <elevenlabs-convai agent-id={ELEVENLABS_AGENT_ID} />
       <Script
         src="https://unpkg.com/@elevenlabs/convai-widget-embed"
         strategy="afterInteractive"
