@@ -12,15 +12,16 @@ export const maxDuration = 20;
 // Fastest model available on OpenRouter (gemini-2.0-flash-exp is Google-AI-Studio
 // only), with a tiny token budget so voice replies are short and quick to speak.
 const VOICE_MODEL = "google/gemini-2.5-flash-lite";
-const VOICE_MAX_TOKENS = 90;
+const VOICE_MAX_TOKENS = 55;
 // Per-model cap: the whole model chain can't stall the response.
 const LLM_TIMEOUT_MS = 8000;
 const TTS_TIMEOUT_MS = 5000;
 const WARMUP_TIMEOUT_MS = 2500;
 
-// Keep spoken replies short — 1–2 sentences reads/speaks far faster than a paragraph.
+// Keep spoken replies short — one or two brief sentences speaks far faster than a
+// paragraph. Voice is a conversation, not a monologue: say the key point, then stop.
 const VOICE_BREVITY =
-  "This is a spoken voice conversation. Answer in 1–2 short sentences, under 40 words. Be direct and natural.";
+  "This is a spoken voice conversation. Answer in one short sentence, 20 words maximum. Say only the single most important point, then stop. Do not list, do not explain at length. If more detail is needed, invite a follow-up question.";
 
 // Played when the model times out or fails — a natural "say that again" prompt
 // rather than a dead end.
