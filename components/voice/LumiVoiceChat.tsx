@@ -57,6 +57,7 @@ export function LumiVoiceChat() {
   const introDoneRef = useRef<boolean>(false);
   const activeRef = useRef<boolean>(false);
   const langRef = useRef(lang);
+  const beginRecognitionRef = useRef<(() => void) | null>(null);
 
   useEffect(() => { langRef.current = lang; }, [lang]);
 
@@ -101,9 +102,16 @@ export function LumiVoiceChat() {
     const message = text.trim();
     if (!message) return;
     const spoken: "en" | "fa" = isFarsi(message) ? "fa" : "en";
-    // One round trip: transcript → Lumi → streamed audio reply.
+    // One round trip: transcript → Lumi → streamed audio reply. When the reply
+    // finishes, resume listening so the conversation can continue hands-free
+    // (guarded by activeRef, so toggling the mic off ends the loop).
     const url = `/api/voice?lang=${spoken}&session_id=${encodeURIComponent(sessionRef.current)}&transcript=${encodeURIComponent(message)}`;
-    playUrl(url, { track: true });
+    playUrl(url, {
+      track: true,
+      onDone: () => {
+        if (activeRef.current) beginRecognitionRef.current?.();
+      },
+    });
   }, [playUrl]);
 
   const beginRecognition = useCallback(() => {
@@ -112,16 +120,28 @@ export function LumiVoiceChat() {
     try {
       const rec = new Ctor();
       rec.lang = langRef.current === "fa" ? "fa-IR" : "en-US";
-      rec.continuous = true;
-      rec.interimResults = true;
+      // Non-continuous: recognition ends automatically on a natural pause, and it
+      // is that end that fires onend → send. (In continuous mode it never
+      // auto-ends, so the transcript was never sent unless the user tapped the mic
+      // a second time — which is the "no response after speaking" bug.)
+      rec.continuous = false;
+      rec.interimResults = false;
       finalRef.current = "";
       sentRef.current = false;
       rec.onresult = (e) => {
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          if (e.results[i].isFinal) finalRef.current += e.results[i][0]?.transcript ?? "";
+        let transcript = "";
+        for (let i = 0; i < e.results.length; i++) {
+          transcript += e.results[i][0]?.transcript ?? "";
         }
+        finalRef.current = transcript.trim();
+      };
+      rec.onerror = () => {
+        /* transient (no-speech / aborted); onend runs next and handles it */
       };
       rec.onend = () => {
+        // A manual mic-off clears activeRef first, so that path neither sends nor
+        // resumes — it just stops.
+        if (!activeRef.current) return;
         const finalText = finalRef.current.trim();
         if (finalText && !sentRef.current) {
           sentRef.current = true;
@@ -134,6 +154,11 @@ export function LumiVoiceChat() {
       /* recognition unavailable */
     }
   }, [send]);
+
+  // Keep a stable handle so send() can resume listening without a dependency cycle.
+  useEffect(() => {
+    beginRecognitionRef.current = beginRecognition;
+  }, [beginRecognition]);
 
   const startRecording = useCallback(() => {
     activeRef.current = true;
@@ -150,8 +175,9 @@ export function LumiVoiceChat() {
   }, [beginRecognition, playUrl, t.voice.intro]);
 
   const stopRecording = useCallback(() => {
+    // Clear active BEFORE stopping so the pending onend neither sends nor resumes.
     activeRef.current = false;
-    try { recRef.current?.stop(); } catch { /* onend still fires */ }
+    try { recRef.current?.stop(); } catch { /* already stopped */ }
   }, []);
 
   return (
