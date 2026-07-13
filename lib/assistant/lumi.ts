@@ -113,7 +113,8 @@ export async function callLumi(
   lang?: string,
   extraContext?: string,
   maxTokens = 600,
-  modelOverride?: string
+  modelOverride?: string,
+  timeoutMs?: number
 ): Promise<string | null> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) return null;
@@ -141,20 +142,27 @@ export async function callLumi(
 
   // Try each model in the chain until one returns a usable reply.
   for (const model of models) {
-    const reply = await tryModel(model, payloadMessages, key, site, maxTokens);
+    const reply = await tryModel(model, payloadMessages, key, site, maxTokens, timeoutMs);
     if (reply) return reply;
   }
   return null;
 }
 
-/** One OpenRouter completion for a specific model. Returns null on any failure. */
+/**
+ * One OpenRouter completion for a specific model. Returns null on any failure.
+ * When `timeoutMs` is set, the request is aborted after that long so a hanging
+ * model can't stall the whole chain (important for the voice path).
+ */
 async function tryModel(
   model: string,
   payloadMessages: { role: string; content: string }[],
   key: string,
   site: string,
-  maxTokens: number
+  maxTokens: number,
+  timeoutMs?: number
 ): Promise<string | null> {
+  const controller = timeoutMs ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
   try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -167,6 +175,7 @@ async function tryModel(
       },
       body: JSON.stringify({ model, messages: payloadMessages, temperature: 0.5, max_tokens: maxTokens }),
       cache: "no-store",
+      signal: controller?.signal,
     });
     if (!res.ok) {
       console.warn("[lumi] OpenRouter", model, res.status, await res.text().catch(() => ""));
@@ -178,5 +187,7 @@ async function tryModel(
   } catch (err) {
     console.warn("[lumi] OpenRouter failed", model, (err as Error).message);
     return null;
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
+export const maxDuration = 15;
+
+const TTS_TIMEOUT_MS = 5000;
 
 /**
  * ElevenLabs text-to-speech for the voice chat. Streams the audio straight from
@@ -21,6 +24,8 @@ async function synthesize(text: string): Promise<Response> {
   const clean = (text || "").replace(/\/book/g, "book").trim();
   if (!key || !voiceId || !clean) return new NextResponse(null, { status: 204 });
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TTS_TIMEOUT_MS);
   try {
     const el = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`, {
       method: "POST",
@@ -35,6 +40,7 @@ async function synthesize(text: string): Promise<Response> {
         voice_settings: { stability: 0.5, similarity_boost: 0.75 },
       }),
       cache: "no-store",
+      signal: controller.signal,
     });
     if (!el.ok || !el.body) {
       console.warn("[voice/speech] ElevenLabs", el.status, await el.text().catch(() => ""));
@@ -48,6 +54,8 @@ async function synthesize(text: string): Promise<Response> {
   } catch (err) {
     console.warn("[voice/speech] TTS failed:", (err as Error).message);
     return new NextResponse(null, { status: 204 });
+  } finally {
+    clearTimeout(timer);
   }
 }
 
