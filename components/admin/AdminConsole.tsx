@@ -6,6 +6,7 @@ import { promoteToClient, saveBookingLink, resendBookingEmail } from "@/app/admi
 import { formatSlot, type PaymentStatus } from "@/lib/booking";
 import type { Role } from "@/lib/roles";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { fmtDate } from "@/lib/i18n/adminDate";
 import { ChatLogsSection, type ChatLogRow } from "./ChatLogsSection";
 import { LeadsSection, type LeadRow } from "./LeadsSection";
 import { AnalyticsSection, type AdminStats } from "./AnalyticsSection";
@@ -45,15 +46,6 @@ const STATUS_STYLE: Record<PaymentStatus, string> = {
   failed: "bg-ember/12 text-ember",
 };
 
-function fmtDate(iso: string) {
-  // International date format with Western numerals, per the brand rules.
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 /**
  * Client view for /admin. The page route does the admin-guarded service-role
  * reads server-side and passes the rows here so the copy can read the active
@@ -90,7 +82,7 @@ export function AdminConsole({
   memories: MemoryRow[];
   clients: ClientOption[];
 }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const projectOptions = projects.map((p) => ({ id: p.id, title: p.title }));
 
   const accountWord = users.length === 1 ? t.admin.account : t.admin.accounts;
@@ -158,7 +150,7 @@ export function AdminConsole({
                           </span>
                         </td>
                         <td className="px-5 py-4 font-mono text-xs text-steel/80" dir="ltr">
-                          {fmtDate(u.created_at)}
+                          {fmtDate(u.created_at, lang)}
                         </td>
                         <td className="px-5 py-4 text-end">
                           {u.role === "prospect" ? (
@@ -234,7 +226,7 @@ export function AdminConsole({
 }
 
 function BookingCard({ booking: b, businessTz }: { booking: Booking; businessTz: string }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const confirmed = b.payment_status === "confirmed";
   return (
     <article className="glass-tint rounded-2xl border border-white/70 p-6 shadow-lg sm:p-7">
@@ -251,7 +243,7 @@ function BookingCard({ booking: b, businessTz }: { booking: Booking; businessTz:
             {t.admin.status[b.payment_status]}
           </span>
           <span className="font-mono text-[11px] uppercase tracking-wide text-steel/70" dir="ltr">
-            {fmtDate(b.created_at)}
+            {fmtDate(b.created_at, lang)}
           </span>
         </div>
       </div>
@@ -271,7 +263,7 @@ function BookingCard({ booking: b, businessTz }: { booking: Booking; businessTz:
             {t.admin.session} ({businessTz.replace(/_/g, " ")})
           </dt>
           <dd className="mt-1 text-sm font-medium leading-relaxed text-midnight" dir="ltr">
-            {b.selected_slot ? formatSlot(b.selected_slot, businessTz) : <span className="font-normal text-steel/40">—</span>}
+            {b.selected_slot ? formatSlot(b.selected_slot, businessTz, lang) : <span className="font-normal text-steel/40">—</span>}
           </dd>
         </div>
       </dl>

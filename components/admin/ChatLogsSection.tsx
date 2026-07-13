@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { fmtDate, fmtTime } from "@/lib/i18n/adminDate";
 
 export type ChatMessage = { role: string; content: string };
 
@@ -17,12 +18,6 @@ export type ChatLogRow = {
 type LangFilter = "all" | "en" | "fa";
 type UserFilter = "all" | "user" | "guest";
 
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-}
-function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-}
 function firstUserMessage(messages: ChatMessage[]) {
   return messages.find((m) => m.role === "user")?.content ?? messages[0]?.content ?? "";
 }
@@ -37,7 +32,7 @@ function csvCell(v: string | number) {
  * set. Dates/emails render LTR so they read correctly inside the RTL layout.
  */
 export function ChatLogsSection({ logs }: { logs: ChatLogRow[] }) {
-  const { t } = useLanguage();
+  const { t, lang: uiLang } = useLanguage();
   const c = t.admin.chatLogs;
 
   const [from, setFrom] = useState("");
@@ -88,8 +83,8 @@ export function ChatLogsSection({ logs }: { logs: ChatLogRow[] }) {
     const header = ["id", "date", "time", "language", "user_email", "message_count", "full_conversation"];
     const rows = filtered.map((l) => [
       l.id,
-      fmtDate(l.created_at),
-      fmtTime(l.created_at),
+      fmtDate(l.created_at, "en"),
+      fmtTime(l.created_at, "en"),
       l.language,
       l.user_email ?? "Guest",
       l.messages.length,
@@ -135,8 +130,8 @@ export function ChatLogsSection({ logs }: { logs: ChatLogRow[] }) {
             <span className="font-mono text-[10px] uppercase tracking-wide text-steel">{c.language}</span>
             <select value={lang} onChange={(e) => setLang(e.target.value as LangFilter)} className={selectCls}>
               <option value="all">{c.all}</option>
-              <option value="en">EN</option>
-              <option value="fa">FA</option>
+              <option value="en">{t.admin.langNames.en}</option>
+              <option value="fa">{t.admin.langNames.fa}</option>
             </select>
           </label>
           <label className="flex flex-col gap-1">
@@ -206,7 +201,7 @@ export function ChatLogsSection({ logs }: { logs: ChatLogRow[] }) {
                     <FragmentRow key={l.id}>
                       <tr className="transition-colors hover:bg-white/40">
                         <td className="whitespace-nowrap px-5 py-4 font-mono text-xs text-steel/80" dir="ltr">
-                          {fmtDate(l.created_at)} · {fmtTime(l.created_at)}
+                          {fmtDate(l.created_at, uiLang)} · {fmtTime(l.created_at, uiLang)}
                         </td>
                         <td className="px-5 py-4">
                           <span
@@ -214,7 +209,7 @@ export function ChatLogsSection({ logs }: { logs: ChatLogRow[] }) {
                               l.language === "fa" ? "bg-teal/12 text-teal" : "bg-sapphire/10 text-sapphire"
                             }`}
                           >
-                            {l.language === "fa" ? "FA" : "EN"}
+                            {t.admin.langNames[l.language === "fa" ? "fa" : "en"]}
                           </span>
                         </td>
                         <td className="px-5 py-4 text-sm text-steel">

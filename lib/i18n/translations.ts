@@ -400,6 +400,8 @@ const en = {
     booking: "booking",
     bookings: "bookings",
     awaitingPayment: "awaiting payment",
+    // language name shown on conversation/lead badges + filters (Western codes → words)
+    langNames: { en: "English", fa: "Persian" },
     // people
     people: "People",
     roles: { prospect: "prospect", client: "client", admin: "admin" },
@@ -473,6 +475,7 @@ const en = {
       source: "Source",
       language: "Language",
       all: "All",
+      sources: { chat: "Chat", telegram: "Telegram", voice: "Voice" },
       exportCsv: "Export CSV",
       thName: "Name",
       thEmail: "Email",
@@ -557,6 +560,7 @@ const en = {
       view: "View",
       hide: "Hide",
       delete: "Delete",
+      confirmDelete: "Delete this memory? This cannot be undone.",
       keyFacts: "Key facts",
       noSummary: "No summary",
       dash: "—",
@@ -1014,6 +1018,7 @@ const fa: Dict = {
     booking: "رزرو",
     bookings: "رزرو",
     awaitingPayment: "در انتظار پرداخت",
+    langNames: { en: "انگلیسی", fa: "فارسی" },
     // people
     people: "افراد",
     roles: { prospect: "سرنخ", client: "مشتری", admin: "مدیر" },
@@ -1087,6 +1092,7 @@ const fa: Dict = {
       source: "منبع",
       language: "زبان",
       all: "همه",
+      sources: { chat: "گفتگو", telegram: "تلگرام", voice: "صوتی" },
       exportCsv: "خروجی CSV",
       thName: "نام",
       thEmail: "ایمیل",
@@ -1171,6 +1177,7 @@ const fa: Dict = {
       view: "مشاهده",
       hide: "بستن",
       delete: "حذف",
+      confirmDelete: "این حافظه حذف شود؟ این عمل قابل بازگشت نیست.",
       keyFacts: "نکات کلیدی",
       noSummary: "بدون خلاصه",
       dash: "—",

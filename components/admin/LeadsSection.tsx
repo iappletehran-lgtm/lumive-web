@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { markLeadContacted } from "@/app/admin/actions";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { fmtDate } from "@/lib/i18n/adminDate";
 
 export type LeadRow = {
   id: string;
@@ -18,12 +19,15 @@ export type LeadRow = {
   created_at: string;
 };
 
-type SourceFilter = "all" | "chat" | "telegram";
+type SourceFilter = "all" | "chat" | "telegram" | "voice";
 type LangFilter = "all" | "en" | "fa";
 
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-}
+const SOURCE_STYLE: Record<string, string> = {
+  chat: "bg-sapphire/10 text-sapphire",
+  telegram: "bg-lumive-light/12 text-teal",
+  voice: "bg-brass/15 text-[#8a6d1f]",
+};
+
 function csvCell(v: string | number) {
   const s = String(v ?? "");
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -35,7 +39,7 @@ function csvCell(v: string | number) {
  * the markLeadContacted server action. Emails/phones render LTR inside RTL.
  */
 export function LeadsSection({ leads }: { leads: LeadRow[] }) {
-  const { t } = useLanguage();
+  const { t, lang: uiLang } = useLanguage();
   const c = t.admin.leads;
 
   const [source, setSource] = useState<SourceFilter>("all");
@@ -62,7 +66,7 @@ export function LeadsSection({ leads }: { leads: LeadRow[] }) {
       l.source ?? "chat",
       l.language ?? "en",
       l.contacted ? "yes" : "no",
-      fmtDate(l.created_at),
+      fmtDate(l.created_at, "en"),
       l.message ?? "",
     ]);
     const csv = [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
@@ -96,16 +100,17 @@ export function LeadsSection({ leads }: { leads: LeadRow[] }) {
             <span className="font-mono text-[10px] uppercase tracking-wide text-steel">{c.source}</span>
             <select value={source} onChange={(e) => setSource(e.target.value as SourceFilter)} className={selectCls}>
               <option value="all">{c.all}</option>
-              <option value="chat">chat</option>
-              <option value="telegram">telegram</option>
+              <option value="chat">{c.sources.chat}</option>
+              <option value="telegram">{c.sources.telegram}</option>
+              <option value="voice">{c.sources.voice}</option>
             </select>
           </label>
           <label className="flex flex-col gap-1">
             <span className="font-mono text-[10px] uppercase tracking-wide text-steel">{c.language}</span>
             <select value={lang} onChange={(e) => setLang(e.target.value as LangFilter)} className={selectCls}>
               <option value="all">{c.all}</option>
-              <option value="en">EN</option>
-              <option value="fa">FA</option>
+              <option value="en">{t.admin.langNames.en}</option>
+              <option value="fa">{t.admin.langNames.fa}</option>
             </select>
           </label>
           <div className="ms-auto">
@@ -151,16 +156,16 @@ export function LeadsSection({ leads }: { leads: LeadRow[] }) {
                     <td className="px-4 py-3.5 text-sm text-steel"><span dir="ltr">{l.phone_number || c.dash}</span></td>
                     <td className="px-4 py-3.5 text-sm text-steel">{l.company || <span className="text-steel/40">{c.dash}</span>}</td>
                     <td className="px-4 py-3.5">
-                      <span className={`rounded-full px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-wide ${l.source === "telegram" ? "bg-lumive-light/12 text-teal" : "bg-sapphire/10 text-sapphire"}`}>
-                        {l.source || "chat"}
+                      <span className={`rounded-full px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-wide ${SOURCE_STYLE[l.source || "chat"] ?? "bg-sapphire/10 text-sapphire"}`}>
+                        {c.sources[(l.source || "chat") as keyof typeof c.sources] ?? (l.source || "chat")}
                       </span>
                     </td>
                     <td className="px-4 py-3.5">
                       <span className="rounded-full bg-steel/10 px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-wide text-steel">
-                        {(l.language || "en") === "fa" ? "FA" : "EN"}
+                        {t.admin.langNames[(l.language || "en") === "fa" ? "fa" : "en"]}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 font-mono text-xs text-steel/80" dir="ltr">{fmtDate(l.created_at)}</td>
+                    <td className="px-4 py-3.5 font-mono text-xs text-steel/80" dir="ltr">{fmtDate(l.created_at, uiLang)}</td>
                     <td className="px-4 py-3.5 text-end">
                       {l.contacted ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-teal/12 px-2.5 py-1 text-xs font-semibold text-teal">

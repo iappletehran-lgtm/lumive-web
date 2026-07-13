@@ -4,6 +4,7 @@ import { useState } from "react";
 import { addProject, updateProjectStatus } from "@/app/admin/actions";
 import { PROJECT_STATUSES, isProjectStatus } from "@/lib/projects";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { fmtDate } from "@/lib/i18n/adminDate";
 
 export type ProjectRow = {
   id: string;
@@ -16,11 +17,6 @@ export type ProjectRow = {
 };
 
 export type ClientOption = { id: string; name: string };
-
-function fmtDate(iso: string | null) {
-  if (!iso) return null;
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-}
 
 const STATUS_STYLE: Record<string, string> = {
   discovery: "bg-steel/10 text-steel",
@@ -37,7 +33,7 @@ const STATUS_STYLE: Record<string, string> = {
  * Bilingual via useLanguage(); dates render LTR with Western numerals.
  */
 export function ProjectsSection({ projects, clients }: { projects: ProjectRow[]; clients: ClientOption[] }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const c = t.admin.projects;
   const [showForm, setShowForm] = useState(false);
   const nameById = new Map(clients.map((x) => [x.id, x.name]));
@@ -155,7 +151,7 @@ export function ProjectsSection({ projects, clients }: { projects: ProjectRow[];
                         </form>
                       </td>
                       <td className="px-5 py-4 font-mono text-xs text-steel/80" dir="ltr">
-                        {fmtDate(p.start_date) ?? <span className="text-steel/40">{c.dash}</span>}
+                        {p.start_date ? fmtDate(p.start_date, lang) : <span className="text-steel/40">{c.dash}</span>}
                       </td>
                       <td className="max-w-[280px] px-5 py-4 text-sm text-steel">
                         {p.notes ? <span className="line-clamp-2">{p.notes}</span> : <span className="text-steel/40">{c.dash}</span>}

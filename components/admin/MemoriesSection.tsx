@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { deleteMemory } from "@/app/admin/actions";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { fmtDate } from "@/lib/i18n/adminDate";
 
 export type MemoryRow = {
   id: string;
@@ -13,10 +14,6 @@ export type MemoryRow = {
   created_at: string;
 };
 
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-}
-
 /**
  * Admin "Memories" section — the chatbot's long-term memory. Rows are fetched
  * server-side (service-role) and passed in. "View" expands the full summary and
@@ -24,7 +21,7 @@ function fmtDate(iso: string) {
  * useLanguage(); session IDs / dates render LTR.
  */
 export function MemoriesSection({ memories }: { memories: MemoryRow[] }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const c = t.admin.memories;
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -76,7 +73,7 @@ export function MemoriesSection({ memories }: { memories: MemoryRow[] }) {
                         <td className="px-5 py-4 font-mono text-xs text-steel/80" dir="ltr">{m.session_id}</td>
                         <td className="px-5 py-4">
                           <span className="rounded-full bg-steel/10 px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-wide text-steel">
-                            {(m.language || "en") === "fa" ? "FA" : "EN"}
+                            {t.admin.langNames[(m.language || "en") === "fa" ? "fa" : "en"]}
                           </span>
                         </td>
                         <td className="max-w-[320px] px-5 py-4 text-sm text-steel">
@@ -99,7 +96,7 @@ export function MemoriesSection({ memories }: { memories: MemoryRow[] }) {
                             </div>
                           )}
                         </td>
-                        <td className="px-5 py-4 font-mono text-xs text-steel/80" dir="ltr">{fmtDate(m.created_at)}</td>
+                        <td className="px-5 py-4 font-mono text-xs text-steel/80" dir="ltr">{fmtDate(m.created_at, lang)}</td>
                         <td className="px-5 py-4 text-end">
                           <div className="inline-flex items-center gap-2">
                             <button
@@ -111,7 +108,11 @@ export function MemoriesSection({ memories }: { memories: MemoryRow[] }) {
                             >
                               {isOpen ? c.hide : c.view}
                             </button>
-                            <form action={deleteMemory} className="inline">
+                            <form
+                              action={deleteMemory}
+                              className="inline"
+                              onSubmit={(e) => { if (!confirm(c.confirmDelete)) e.preventDefault(); }}
+                            >
                               <input type="hidden" name="id" value={m.id} />
                               <button
                                 type="submit"

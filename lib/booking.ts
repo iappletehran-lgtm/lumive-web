@@ -28,20 +28,20 @@ export const PAYMENT = {
 export const BUSINESS_TZ = process.env.BUSINESS_TZ || "Europe/Istanbul";
 
 /** Format an instant as e.g. "Mon, 16 Jun 2026 · 9:30 AM" in the given timezone. */
-export function formatSlot(iso: string, timeZone: string): string {
+export function formatSlot(iso: string, timeZone: string, lang: string = "en"): string {
   const d = new Date(iso);
-  const date = d.toLocaleDateString("en-GB", {
+  const isFa = lang === "fa";
+  // Persian: Gregorian calendar + Persian month/day names + Western numerals.
+  const date = d.toLocaleDateString(isFa ? "fa-u-ca-gregory-nu-latn" : "en-GB", {
     weekday: "short",
     day: "numeric",
     month: "short",
     year: "numeric",
     timeZone,
   });
-  const time = d.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone,
-  });
+  const time = isFa
+    ? d.toLocaleTimeString("fa-u-ca-gregory-nu-latn", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone })
+    : d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone });
   return `${date} · ${time}`;
 }
 

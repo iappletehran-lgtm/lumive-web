@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { addDeliverable } from "@/app/admin/actions";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { fmtDate } from "@/lib/i18n/adminDate";
 
 export type DeliverableRow = {
   id: string;
@@ -14,17 +15,13 @@ export type DeliverableRow = {
 
 export type ProjectOption = { id: string; title: string };
 
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-}
-
 /**
  * Admin "Deliverables" section. Rows are fetched server-side (service-role) and
  * passed in. A toggle reveals the "new deliverable" form (addDeliverable). URLs
  * render LTR and open in a new tab. Bilingual via useLanguage().
  */
 export function DeliverablesSection({ deliverables, projects }: { deliverables: DeliverableRow[]; projects: ProjectOption[] }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const c = t.admin.deliverables;
   const [showForm, setShowForm] = useState(false);
   const titleById = new Map(projects.map((p) => [p.id, p.title]));
@@ -122,7 +119,7 @@ export function DeliverablesSection({ deliverables, projects }: { deliverables: 
                         <span className="text-steel/40">{c.dash}</span>
                       )}
                     </td>
-                    <td className="px-5 py-4 font-mono text-xs text-steel/80" dir="ltr">{fmtDate(d.uploaded_at)}</td>
+                    <td className="px-5 py-4 font-mono text-xs text-steel/80" dir="ltr">{fmtDate(d.uploaded_at, lang)}</td>
                   </tr>
                 ))
               )}
