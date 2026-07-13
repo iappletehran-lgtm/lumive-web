@@ -35,6 +35,12 @@ function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
 /** Persian/Arabic characters → the visitor spoke Farsi. */
 const isFarsi = (t: string) => /[؀-ۿ]/.test(t);
 
+// A tiny valid silent WAV. Played once inside the first user gesture to "unlock"
+// audio, so later playback (which happens after an async fetch, outside the gesture)
+// is allowed by browser autoplay policies (Chrome + Safari + iOS).
+const SILENT_WAV =
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+
 /**
  * Voice chat surface: records speech (Web Speech API), sends the transcript to
  * /api/voice, plays the ElevenLabs audio reply automatically, and shows the
@@ -59,6 +65,7 @@ export function LumiVoiceChat() {
   const finalRef = useRef<string>("");
   const sentRef = useRef<boolean>(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const unlockedRef = useRef<boolean>(false);
   const exchangesRef = useRef<number>(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -75,8 +82,24 @@ export function LumiVoiceChat() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [turns, live, thinking]);
 
-  // Fetch the ElevenLabs audio from /api/voice/speech and play it (async — never
-  // blocks the UI). If no audio comes back (204/error), the reply is still shown.
+  // Unlock audio inside a real user gesture (first tap/click anywhere in the voice
+  // UI). Playing the silent WAV grants the shared <audio> element permission, so the
+  // real reply audio can play later even though it arrives after an async fetch.
+  const unlockAudio = useCallback(() => {
+    const a = audioRef.current;
+    if (!a || unlockedRef.current) return;
+    try {
+      a.src = SILENT_WAV;
+      const p = a.play();
+      if (p && typeof p.then === "function") {
+        p.then(() => { a.pause(); unlockedRef.current = true; }).catch(() => { /* will retry on next gesture */ });
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // Fetch the ElevenLabs audio from /api/voice/speech and play it on the shared,
+  // gesture-unlocked <audio> element (async — never blocks the UI). If no audio
+  // comes back (204/error), the reply is still shown as text.
   const speak = useCallback(async (text: string, spoken: "en" | "fa") => {
     try {
       const res = await fetch("/api/voice/speech", {
@@ -88,11 +111,16 @@ export function LumiVoiceChat() {
       const blob = await res.blob();
       if (!blob.size) return;
       const url = URL.createObjectURL(blob);
-      audioRef.current?.pause();
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audio.onended = () => URL.revokeObjectURL(url);
-      void audio.play().catch(() => { /* autoplay blocked — reply is still shown */ });
+      const a = audioRef.current;
+      if (!a) return;
+      a.pause();
+      a.src = url;
+      a.onended = () => URL.revokeObjectURL(url);
+      a.load();
+      a.play().catch((err) => {
+        console.error("Audio play error:", err);
+        URL.revokeObjectURL(url);
+      });
     } catch {
       /* audio unavailable — reply is still shown as text */
     }
@@ -189,7 +217,9 @@ export function LumiVoiceChat() {
   const hasConversation = turns.length > 0 || live || thinking;
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col items-center">
+    <div className="mx-auto flex w-full max-w-xl flex-col items-center" onPointerDown={unlockAudio}>
+      {/* Shared audio element — unlocked on the first gesture, plays every reply. */}
+      <audio ref={audioRef} preload="auto" className="hidden" aria-hidden />
       {supported ? (
         <>
           <AIVoiceInput

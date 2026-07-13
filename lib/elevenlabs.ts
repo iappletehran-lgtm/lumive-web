@@ -20,8 +20,10 @@ export async function textToSpeech(text: string, lang: "en" | "fa"): Promise<Buf
       body: JSON.stringify({
         text: clean,
         model_id: "eleven_turbo_v2_5",
-        // Turbo v2.5 supports explicit language codes; set "fa" for Persian.
-        ...(lang === "fa" ? { language_code: "fa" } : {}),
+        // eleven_turbo_v2_5 accepts "en" but REJECTS "fa" (unsupported_language).
+        // For Persian we omit language_code and let the model auto-detect from the
+        // Persian text, which produces valid audio.
+        ...(lang === "en" ? { language_code: "en" } : {}),
       }),
       cache: "no-store",
     });
