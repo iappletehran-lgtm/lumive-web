@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { AIVoiceInput } from "@/components/ui/ai-voice-input";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-
-type Turn = { role: "user" | "assistant"; text: string };
 
 // Minimal Web Speech API typings (not in the standard DOM lib).
 interface SpeechRecognitionLike {
@@ -36,29 +34,18 @@ function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
 const isFarsi = (t: string) => /[؀-ۿ]/.test(t);
 
 // A tiny valid silent WAV. Played once inside the first user gesture to "unlock"
-// audio, so later playback (which happens after an async fetch, outside the gesture)
-// is allowed by browser autoplay policies (Chrome + Safari + iOS).
+// audio, so streamed playback (which starts after an async step) is allowed by
+// browser autoplay policies (Chrome + Safari + iOS).
 const SILENT_WAV =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
 /**
- * Voice chat surface: records speech (Web Speech API), sends the transcript to
- * /api/voice, plays the ElevenLabs audio reply automatically, and shows the
- * conversation. After the 3rd exchange it surfaces a lead form (name + phone).
- * Falls back to a text input when speech recognition is unavailable. Bilingual.
+ * Minimal voice surface — just the microphone + visualizer. The visitor speaks,
+ * Lumi replies, and the reply is spoken aloud (ElevenLabs, streamed). Nothing is
+ * shown as text: no transcript, no input, no lead form.
  */
 export function LumiVoiceChat() {
-  const { t, lang } = useLanguage();
-  const v = t.voice;
-
-  const [supported, setSupported] = useState(false);
-  const [turns, setTurns] = useState<Turn[]>([]);
-  const [live, setLive] = useState("");
-  const [thinking, setThinking] = useState(false);
-  const [error, setError] = useState("");
-  const [typed, setTyped] = useState("");
-  const [showLead, setShowLead] = useState(false);
-  const [leadDone, setLeadDone] = useState(false);
+  const { lang } = useLanguage();
 
   const sessionRef = useRef<string>("");
   const recRef = useRef<SpeechRecognitionLike | null>(null);
@@ -66,11 +53,9 @@ export function LumiVoiceChat() {
   const sentRef = useRef<boolean>(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const unlockedRef = useRef<boolean>(false);
-  const exchangesRef = useRef<number>(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const busyRef = useRef<boolean>(false);
 
   useEffect(() => {
-    setSupported(!!getRecognitionCtor());
     if (!sessionRef.current) sessionRef.current = `voice_${crypto.randomUUID()}`;
     return () => {
       try { recRef.current?.abort(); } catch { /* ignore */ }
@@ -78,13 +63,8 @@ export function LumiVoiceChat() {
     };
   }, []);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [turns, live, thinking]);
-
-  // Unlock audio inside a real user gesture (first tap/click anywhere in the voice
-  // UI). Playing the silent WAV grants the shared <audio> element permission, so the
-  // real reply audio can play later even though it arrives after an async fetch.
+  // Unlock audio inside a real user gesture (first tap/click on the mic area) by
+  // playing the silent WAV, so the streamed reply audio is allowed to play later.
   const unlockAudio = useCallback(() => {
     const a = audioRef.current;
     if (!a || unlockedRef.current) return;
@@ -92,49 +72,28 @@ export function LumiVoiceChat() {
       a.src = SILENT_WAV;
       const p = a.play();
       if (p && typeof p.then === "function") {
-        p.then(() => { a.pause(); unlockedRef.current = true; }).catch(() => { /* will retry on next gesture */ });
+        p.then(() => { a.pause(); unlockedRef.current = true; }).catch(() => { /* retry next gesture */ });
       }
     } catch { /* ignore */ }
   }, []);
 
-  // Fetch the ElevenLabs audio from /api/voice/speech and play it on the shared,
-  // gesture-unlocked <audio> element (async — never blocks the UI). If no audio
-  // comes back (204/error), the reply is still shown as text.
-  const speak = useCallback(async (text: string, spoken: "en" | "fa") => {
-    try {
-      const res = await fetch("/api/voice/speech", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ text, lang: spoken }),
-      });
-      if (!res.ok) return; // 204 = no audio available
-      const blob = await res.blob();
-      if (!blob.size) return;
-      const url = URL.createObjectURL(blob);
-      const a = audioRef.current;
-      if (!a) return;
-      a.pause();
-      a.src = url;
-      a.onended = () => URL.revokeObjectURL(url);
-      a.load();
-      a.play().catch((err) => {
-        console.error("Audio play error:", err);
-        URL.revokeObjectURL(url);
-      });
-    } catch {
-      /* audio unavailable — reply is still shown as text */
-    }
+  // Stream the ElevenLabs audio straight into the shared <audio> element (GET so it
+  // plays progressively). Never blocks anything; logs a play() rejection if any.
+  const speak = useCallback((text: string, spoken: "en" | "fa") => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.pause();
+    a.src = `/api/voice/speech?lang=${spoken}&text=${encodeURIComponent(text)}`;
+    a.load();
+    a.play().catch((err) => console.error("Audio play error:", err));
   }, []);
 
   const send = useCallback(
     async (text: string) => {
       const message = text.trim();
-      if (!message || thinking) return;
+      if (!message || busyRef.current) return;
+      busyRef.current = true;
       const spoken: "en" | "fa" = isFarsi(message) ? "fa" : "en";
-      setLive("");
-      setTurns((prev) => [...prev, { role: "user", text: message }]);
-      setThinking(true);
-      setError("");
       try {
         const res = await fetch("/api/voice", {
           method: "POST",
@@ -142,19 +101,14 @@ export function LumiVoiceChat() {
           body: JSON.stringify({ transcript: message, session_id: sessionRef.current, lang: spoken }),
         });
         const data = await res.json().catch(() => ({}));
-        const reply: string = data.reply || v.notSupported;
-        setTurns((prev) => [...prev, { role: "assistant", text: reply }]);
-        void speak(reply, spoken);
-        // Show the lead form after the 3rd exchange (once).
-        exchangesRef.current += 1;
-        if (exchangesRef.current >= 3 && !leadDone) setShowLead(true);
+        if (data.reply) speak(data.reply, spoken);
       } catch {
-        setError(v.micBlocked);
+        /* silent — voice-only surface */
       } finally {
-        setThinking(false);
+        busyRef.current = false;
       }
     },
-    [thinking, speak, leadDone, v.notSupported, v.micBlocked]
+    [speak]
   );
 
   const startRecording = useCallback(() => {
@@ -168,15 +122,10 @@ export function LumiVoiceChat() {
       finalRef.current = "";
       sentRef.current = false;
       rec.onresult = (e) => {
-        let interim = "";
         for (let i = e.resultIndex; i < e.results.length; i++) {
-          const chunk = e.results[i][0]?.transcript ?? "";
-          if (e.results[i].isFinal) finalRef.current += chunk;
-          else interim += chunk;
+          if (e.results[i].isFinal) finalRef.current += e.results[i][0]?.transcript ?? "";
         }
-        setLive(`${finalRef.current} ${interim}`.trim());
       };
-      rec.onerror = () => setError(v.micBlocked);
       rec.onend = () => {
         const finalText = finalRef.current.trim();
         if (finalText && !sentRef.current) {
@@ -187,131 +136,19 @@ export function LumiVoiceChat() {
       rec.start();
       recRef.current = rec;
     } catch {
-      setError(v.micBlocked);
+      /* recognition unavailable */
     }
-  }, [lang, send, v.micBlocked]);
+  }, [lang, send]);
 
   const stopRecording = useCallback(() => {
     try { recRef.current?.stop(); } catch { /* onend still fires */ }
   }, []);
 
-  async function submitLead(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    await fetch("/api/voice", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        session_id: sessionRef.current,
-        lang,
-        lead: {
-          full_name: String(form.get("full_name") || ""),
-          phone_number: String(form.get("phone_number") || ""),
-        },
-      }),
-    }).catch(() => {});
-    setLeadDone(true);
-    setShowLead(false);
-  }
-
-  const hasConversation = turns.length > 0 || live || thinking;
-
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col items-center" onPointerDown={unlockAudio}>
-      {/* Shared audio element — unlocked on the first gesture, plays every reply. */}
+      {/* Shared audio element — unlocked on the first gesture, speaks every reply. */}
       <audio ref={audioRef} preload="auto" className="hidden" aria-hidden />
-      {supported ? (
-        <>
-          <AIVoiceInput
-            onStart={startRecording}
-            onStop={stopRecording}
-            visualizerBars={40}
-            className="[&_p.text-xs]:hidden [&_span.font-mono]:!text-steel"
-          />
-          <p className="-mt-1 mb-1 h-4 text-xs text-steel/80">
-            {live ? live : thinking ? v.thinking : v.clickToSpeak}
-          </p>
-        </>
-      ) : (
-        <p className="max-w-sm px-4 py-6 text-center text-sm text-steel">{v.notSupported}</p>
-      )}
-
-      {/* Text fallback / alternative — always available, mobile friendly */}
-      <form
-        onSubmit={(e) => { e.preventDefault(); if (typed.trim()) { send(typed); setTyped(""); } }}
-        className="mt-2 flex w-full max-w-md items-center gap-2"
-      >
-        <input
-          value={typed}
-          onChange={(e) => setTyped(e.target.value)}
-          placeholder={v.inputPlaceholder}
-          aria-label={v.orType}
-          className="min-w-0 flex-1 rounded-md border border-cloud bg-white/80 px-4 py-2.5 text-sm text-midnight placeholder:text-steel/50 focus:border-sapphire focus:bg-white focus:outline-none"
-        />
-        <button
-          type="submit"
-          disabled={!typed.trim() || thinking}
-          data-sound="cta"
-          className="focus-brand shrink-0 rounded-md bg-sapphire px-4 py-2.5 text-sm font-semibold text-mist transition-all hover:brightness-110 disabled:opacity-40"
-        >
-          {v.send}
-        </button>
-      </form>
-
-      {error && <p role="alert" className="mt-3 text-sm text-ember">{error}</p>}
-
-      {/* Conversation transcript — user right (sapphire), Lumi left (mist) */}
-      {hasConversation && (
-        <div
-          ref={scrollRef}
-          className="mt-6 max-h-72 w-full space-y-3 overflow-y-auto rounded-2xl border border-sapphire/25 bg-mist p-5 shadow-sm"
-        >
-          {turns.map((turn, i) => {
-            const isUser = turn.role === "user";
-            return (
-              <div key={i} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-                <div className="max-w-[85%]">
-                  <p className={`mb-1 font-mono text-[10px] uppercase tracking-wide ${isUser ? "text-mist/70" : "text-teal"}`} style={isUser ? { textAlign: "right" } : undefined}>
-                    {isUser ? v.you : v.lumi}
-                  </p>
-                  <div
-                    className={`whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                      isUser ? "rounded-tr-sm bg-sapphire text-mist" : "rounded-tl-sm border border-cloud bg-white text-midnight"
-                    }`}
-                  >
-                    {turn.text}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-          {live && (
-            <div className="flex justify-end">
-              <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-sapphire/60 px-4 py-2.5 text-sm text-mist">{live}</div>
-            </div>
-          )}
-          {thinking && <p className="text-center text-xs text-steel/60">{v.thinking}</p>}
-        </div>
-      )}
-
-      {/* Lead capture card — shown after the 3rd exchange (name + phone) */}
-      {showLead && !leadDone && (
-        <form onSubmit={submitLead} className="mt-4 w-full rounded-2xl border border-brass/40 bg-brass/[0.06] p-5 shadow-sm">
-          <p className="mb-3 text-sm font-semibold text-sapphire">{v.leadTitle}</p>
-          <div className="flex flex-col gap-2.5 sm:flex-row">
-            <input name="full_name" placeholder={v.leadName} required className="min-w-0 flex-1 rounded-md border border-cloud bg-white/80 px-3 py-2 text-sm text-midnight placeholder:text-steel/50 focus:border-sapphire focus:bg-white focus:outline-none" />
-            <input name="phone_number" placeholder={v.leadPhone} required dir="ltr" className="min-w-0 flex-1 rounded-md border border-cloud bg-white/80 px-3 py-2 text-sm text-midnight placeholder:text-steel/50 focus:border-sapphire focus:bg-white focus:outline-none" />
-          </div>
-          <button type="submit" data-sound="cta" className="focus-brand glow-cta mt-3 w-full rounded-md bg-brass px-5 py-2.5 text-sm font-semibold text-midnight transition-all hover:brightness-95">
-            {v.leadSubmit}
-          </button>
-        </form>
-      )}
-      {leadDone && (
-        <p className="mt-4 w-full rounded-2xl border border-teal/30 bg-teal/[0.08] p-4 text-center text-sm text-teal">
-          {v.leadThanks}
-        </p>
-      )}
+      <AIVoiceInput onStart={startRecording} onStop={stopRecording} visualizerBars={40} />
     </div>
   );
 }

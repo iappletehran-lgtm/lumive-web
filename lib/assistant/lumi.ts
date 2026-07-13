@@ -111,7 +111,8 @@ export type LumiMessage = { role: "user" | "assistant"; content: string };
 export async function callLumi(
   messages: LumiMessage[],
   lang?: string,
-  extraContext?: string
+  extraContext?: string,
+  maxTokens = 600
 ): Promise<string | null> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) return null;
@@ -133,7 +134,7 @@ export async function callLumi(
 
   // Try each model in the fallback chain until one returns a usable reply.
   for (const model of LUMI_MODELS) {
-    const reply = await tryModel(model, payloadMessages, key, site);
+    const reply = await tryModel(model, payloadMessages, key, site, maxTokens);
     if (reply) return reply;
   }
   return null;
@@ -144,7 +145,8 @@ async function tryModel(
   model: string,
   payloadMessages: { role: string; content: string }[],
   key: string,
-  site: string
+  site: string,
+  maxTokens: number
 ): Promise<string | null> {
   try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -156,7 +158,7 @@ async function tryModel(
         "HTTP-Referer": site,
         "X-Title": "Lumive AI Lumi",
       },
-      body: JSON.stringify({ model, messages: payloadMessages, temperature: 0.5, max_tokens: 600 }),
+      body: JSON.stringify({ model, messages: payloadMessages, temperature: 0.5, max_tokens: maxTokens }),
       cache: "no-store",
     });
     if (!res.ok) {
