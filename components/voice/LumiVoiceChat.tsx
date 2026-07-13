@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AIVoiceInput } from "@/components/ui/ai-voice-input";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
@@ -33,19 +33,20 @@ function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
 /** Persian/Arabic characters → the visitor spoke Farsi. */
 const isFarsi = (t: string) => /[؀-ۿ]/.test(t);
 
-// A tiny valid silent WAV. Played once inside the first user gesture to "unlock"
-// audio, so streamed playback (which starts after an async step) is allowed by
-// browser autoplay policies (Chrome + Safari + iOS).
+// Tiny silent WAV — played inside the first gesture to unlock audio, so later
+// (async) playback is allowed by browser autoplay policies.
 const SILENT_WAV =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
 /**
- * Minimal voice surface — just the microphone + visualizer. The visitor speaks,
- * Lumi replies, and the reply is spoken aloud (ElevenLabs, streamed). Nothing is
- * shown as text: no transcript, no input, no lead form.
+ * Minimal voice surface — microphone + visualizer only. On the first mic open Lumi
+ * greets the visitor (spoken), then listens; the reply is streamed back as audio
+ * (single round trip to /api/voice). While waiting for a reply the bars pulse
+ * faster. No text is shown.
  */
 export function LumiVoiceChat() {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
+  const [busy, setBusy] = useState(false);
 
   const sessionRef = useRef<string>("");
   const recRef = useRef<SpeechRecognitionLike | null>(null);
@@ -53,7 +54,11 @@ export function LumiVoiceChat() {
   const sentRef = useRef<boolean>(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const unlockedRef = useRef<boolean>(false);
-  const busyRef = useRef<boolean>(false);
+  const introDoneRef = useRef<boolean>(false);
+  const activeRef = useRef<boolean>(false);
+  const langRef = useRef(lang);
+
+  useEffect(() => { langRef.current = lang; }, [lang]);
 
   useEffect(() => {
     if (!sessionRef.current) sessionRef.current = `voice_${crypto.randomUUID()}`;
@@ -63,8 +68,7 @@ export function LumiVoiceChat() {
     };
   }, []);
 
-  // Unlock audio inside a real user gesture (first tap/click on the mic area) by
-  // playing the silent WAV, so the streamed reply audio is allowed to play later.
+  // Unlock audio inside the first gesture so streamed replies can play later.
   const unlockAudio = useCallback(() => {
     const a = audioRef.current;
     if (!a || unlockedRef.current) return;
@@ -77,46 +81,37 @@ export function LumiVoiceChat() {
     } catch { /* ignore */ }
   }, []);
 
-  // Stream the ElevenLabs audio straight into the shared <audio> element (GET so it
-  // plays progressively). Never blocks anything; logs a play() rejection if any.
-  const speak = useCallback((text: string, spoken: "en" | "fa") => {
+  // Play a streaming audio URL on the shared element. `onDone` fires on end/error;
+  // `track` toggles the "busy" state (used for the faster visualizer pulse).
+  const playUrl = useCallback((url: string, opts?: { track?: boolean; onDone?: () => void }) => {
     const a = audioRef.current;
-    if (!a) return;
+    if (!a) { opts?.onDone?.(); return; }
     a.pause();
-    a.src = `/api/voice/speech?lang=${spoken}&text=${encodeURIComponent(text)}`;
+    a.src = url;
     a.load();
-    a.play().catch((err) => console.error("Audio play error:", err));
+    if (opts?.track) setBusy(true);
+    const finish = () => { if (opts?.track) setBusy(false); opts?.onDone?.(); };
+    a.onplaying = () => { if (opts?.track) setBusy(false); };
+    a.onended = finish;
+    a.onerror = () => { console.error("Audio play error:", a.error?.message); finish(); };
+    a.play().catch((err) => { console.error("Audio play error:", err); finish(); });
   }, []);
 
-  const send = useCallback(
-    async (text: string) => {
-      const message = text.trim();
-      if (!message || busyRef.current) return;
-      busyRef.current = true;
-      const spoken: "en" | "fa" = isFarsi(message) ? "fa" : "en";
-      try {
-        const res = await fetch("/api/voice", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ transcript: message, session_id: sessionRef.current, lang: spoken }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (data.reply) speak(data.reply, spoken);
-      } catch {
-        /* silent — voice-only surface */
-      } finally {
-        busyRef.current = false;
-      }
-    },
-    [speak]
-  );
+  const send = useCallback((text: string) => {
+    const message = text.trim();
+    if (!message) return;
+    const spoken: "en" | "fa" = isFarsi(message) ? "fa" : "en";
+    // One round trip: transcript → Lumi → streamed audio reply.
+    const url = `/api/voice?lang=${spoken}&session_id=${encodeURIComponent(sessionRef.current)}&transcript=${encodeURIComponent(message)}`;
+    playUrl(url, { track: true });
+  }, [playUrl]);
 
-  const startRecording = useCallback(() => {
+  const beginRecognition = useCallback(() => {
     const Ctor = getRecognitionCtor();
-    if (!Ctor) return;
+    if (!Ctor || !activeRef.current) return;
     try {
       const rec = new Ctor();
-      rec.lang = lang === "fa" ? "fa-IR" : "en-US";
+      rec.lang = langRef.current === "fa" ? "fa-IR" : "en-US";
       rec.continuous = true;
       rec.interimResults = true;
       finalRef.current = "";
@@ -130,7 +125,7 @@ export function LumiVoiceChat() {
         const finalText = finalRef.current.trim();
         if (finalText && !sentRef.current) {
           sentRef.current = true;
-          void send(finalText);
+          send(finalText);
         }
       };
       rec.start();
@@ -138,17 +133,37 @@ export function LumiVoiceChat() {
     } catch {
       /* recognition unavailable */
     }
-  }, [lang, send]);
+  }, [send]);
+
+  const startRecording = useCallback(() => {
+    activeRef.current = true;
+    if (!introDoneRef.current) {
+      // First open: Lumi greets, then we start listening (so the greeting isn't
+      // captured as input).
+      introDoneRef.current = true;
+      const introText = t.voice.intro;
+      const url = `/api/voice/speech?lang=${langRef.current}&text=${encodeURIComponent(introText)}`;
+      playUrl(url, { onDone: () => { if (activeRef.current) beginRecognition(); } });
+    } else {
+      beginRecognition();
+    }
+  }, [beginRecognition, playUrl, t.voice.intro]);
 
   const stopRecording = useCallback(() => {
+    activeRef.current = false;
     try { recRef.current?.stop(); } catch { /* onend still fires */ }
   }, []);
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col items-center" onPointerDown={unlockAudio}>
-      {/* Shared audio element — unlocked on the first gesture, speaks every reply. */}
+      {/* Shared audio element — greeting + every reply play here. */}
       <audio ref={audioRef} preload="auto" className="hidden" aria-hidden />
-      <AIVoiceInput onStart={startRecording} onStop={stopRecording} visualizerBars={40} />
+      <AIVoiceInput
+        onStart={startRecording}
+        onStop={stopRecording}
+        visualizerBars={40}
+        className={busy ? "[&_.w-64>div]:!animate-pulse [&_.w-64>div]:![animation-duration:0.4s]" : undefined}
+      />
     </div>
   );
 }

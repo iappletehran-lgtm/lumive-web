@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 /**
  * ElevenLabs text-to-speech for the voice chat. Streams the audio straight from
@@ -31,7 +31,7 @@ async function synthesize(text: string): Promise<Response> {
       },
       body: JSON.stringify({
         text: clean,
-        model_id: "eleven_turbo_v2_5",
+        model_id: "eleven_flash_v2_5",
         voice_settings: { stability: 0.5, similarity_boost: 0.75 },
       }),
       cache: "no-store",

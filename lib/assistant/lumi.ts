@@ -112,10 +112,17 @@ export async function callLumi(
   messages: LumiMessage[],
   lang?: string,
   extraContext?: string,
-  maxTokens = 600
+  maxTokens = 600,
+  modelOverride?: string
 ): Promise<string | null> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) return null;
+
+  // Optional fast-path model tried first (e.g. a low-latency model for voice),
+  // then the normal fallback chain.
+  const models = modelOverride
+    ? [modelOverride, ...LUMI_MODELS.filter((m) => m !== modelOverride)]
+    : [...LUMI_MODELS];
 
   const site = process.env.NEXT_PUBLIC_SITE_URL || "https://lumive-web.vercel.app";
 
@@ -132,8 +139,8 @@ export async function callLumi(
     ...messages.map((m) => ({ role: m.role, content: m.content })),
   ];
 
-  // Try each model in the fallback chain until one returns a usable reply.
-  for (const model of LUMI_MODELS) {
+  // Try each model in the chain until one returns a usable reply.
+  for (const model of models) {
     const reply = await tryModel(model, payloadMessages, key, site, maxTokens);
     if (reply) return reply;
   }

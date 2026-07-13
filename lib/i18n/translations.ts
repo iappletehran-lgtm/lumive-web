@@ -20,6 +20,7 @@ const en = {
   voice: {
     title: "Talk to Lumi",
     subtitle: "Ask anything. No forms. Just speak.",
+    intro: "Hi, I'm Lumi — Lumive AI's assistant. How can I help your business today?",
     clickToSpeak: "Click to speak",
     listening: "Listening…",
     thinking: "Lumi is thinking…",
@@ -571,6 +572,7 @@ const fa: Dict = {
   voice: {
     title: "با لومی صحبت کن",
     subtitle: "هر سوالی داری بپرس. فقط صحبت کن.",
+    intro: "سلام، من لومی هستم — دستیار Lumive AI. چطور می‌تونم به کسب‌وکارت کمک کنم؟",
     clickToSpeak: "برای صحبت کلیک کنید",
     listening: "در حال شنیدن…",
     thinking: "لومی در حال فکر کردن است…",
