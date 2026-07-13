@@ -13,12 +13,12 @@ import { sendLeadNotification } from "@/lib/email";
 import type { LumiMessage } from "@/lib/assistant/lumi";
 
 export const LEAD_ASK: Record<"en" | "fa", string> = {
-  en: "Before I point you to the right next step — could I get your name, email, and phone number? I want to make sure Alireza follows up personally.",
-  fa: "قبل از اینکه قدم بعدی رو بهتون بگم — اسم، ایمیل و شماره تلفنتون رو می‌تونم داشته باشم؟ می‌خوام مطمئن بشم علیرضا شخصاً پیگیری می‌کنه.",
+  en: "Before I continue — could I get your name and phone number so I can follow up with you?",
+  fa: "قبل از ادامه — اسم و شماره تلفنتون رو می‌تونم داشته باشم تا بتونم پیگیری کنم؟",
 };
 
 // Stable substrings to recognise the ask inside stored history (both languages).
-const ASK_MARKERS = ["could I get your name", "اسم، ایمیل و شماره"];
+const ASK_MARKERS = ["could I get your name", "اسم و شماره تلفنتون"];
 
 function containsLeadAsk(text: string): boolean {
   return ASK_MARKERS.some((m) => text.includes(m));
@@ -37,18 +37,14 @@ export function leadAlreadyAsked(messages: LumiMessage[]): boolean {
   return messages.some((m) => m.role === "assistant" && containsLeadAsk(m.content));
 }
 
-const START_PRICE_EN = /\b(how (do|can) (i|we) (start|begin)|how to (start|begin)|get(ting)? started|pricing|price|cost|how much|sign ?up)\b/i;
-const START_PRICE_FA = /(چطور شروع|از کجا شروع|شروع کنم|قیمت|هزینه|چقدر|چنده|ثبت ?نام)/;
-const BIZ_EN = /(automat|workflow|process|manual|my team|our team|sales|customer|support|crm|report|invoic|schedul|operation|leads?|inbox|onboard|data entry|repetitive|integrat)/i;
-const BIZ_FA = /(خودکار|اتوماسیون|گردش ?کار|فرایند|فرآیند|تیم|فروش|مشتری|پشتیبانی|گزارش|فاکتور|عملیات|سرنخ|داده|یکپارچه)/;
-
-/** Detect a booking/lead signal from the latest turn. */
+/**
+ * Whether to ask for contact details on this turn. Timing is deliberately tied to
+ * the conversation length — the ask fires at the 3rd exchange (3rd user message),
+ * never earlier, so it never interrupts the first couple of turns. `userText`/
+ * `reply` are kept in the signature for call-site compatibility.
+ */
 export function detectBookingSignal(userText: string, reply: string, userMsgCount: number): boolean {
-  if (reply.includes("/book")) return true;
-  if (START_PRICE_EN.test(userText) || START_PRICE_FA.test(userText)) return true;
-  if (userText.trim().length >= 40 && (BIZ_EN.test(userText) || BIZ_FA.test(userText))) return true;
-  if (userMsgCount >= 3) return true;
-  return false;
+  return userMsgCount >= 3;
 }
 
 const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
@@ -99,7 +95,7 @@ export async function captureLead(data: {
   name: string | null;
   email: string | null;
   phone: string | null;
-  source: "chat" | "telegram";
+  source: "chat" | "telegram" | "voice";
   language: "en" | "fa";
   message: string;
   company?: string | null;

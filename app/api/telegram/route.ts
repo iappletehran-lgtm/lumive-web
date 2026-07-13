@@ -12,6 +12,7 @@ import {
   lastAssistantWasLeadAsk,
   leadAlreadyAsked,
 } from "@/lib/assistant/leads";
+import { fetchMemory, generateAndSaveMemory, memoryContextBlock } from "@/lib/assistant/memory";
 
 export const runtime = "nodejs";
 
@@ -66,7 +67,17 @@ export async function POST(req: NextRequest) {
     const stored = await readConversation(key);
     const userMsg: LumiMessage = { role: "user", content: text };
 
+    // Returning-visitor memory (best-effort) injected into the model context.
+    let memoryContext: string | undefined;
+    try {
+      const mem = await fetchMemory(key);
+      if (mem) memoryContext = memoryContextBlock(mem.summary, mem.key_facts, lang);
+    } catch {
+      /* no memory — proceed normally */
+    }
+
     let reply: string;
+    let leadCaptured = false;
     if (text.startsWith("/start")) {
       reply = START_MESSAGE;
     } else if (text.startsWith("/help")) {
@@ -75,6 +86,7 @@ export async function POST(req: NextRequest) {
       // The previous bot turn asked for contact details — capture them now.
       const lead = extractLead(text);
       if (lead.email || lead.phone) {
+        leadCaptured = true;
         waitUntil(
           captureLead({
             name: lead.name,
@@ -88,12 +100,12 @@ export async function POST(req: NextRequest) {
       }
       const base = memory.get(key) ?? stored.slice(-COLD_SEED);
       const context = [...base, userMsg].slice(-CONTEXT_WINDOW);
-      reply = (await callLumi(context, lang === "fa" ? "fa" : undefined)) || FALLBACK[lang];
+      reply = (await callLumi(context, lang === "fa" ? "fa" : undefined, memoryContext)) || FALLBACK[lang];
     } else {
       // Context: warm memory (last 10) if present, else last 5 from chat_logs.
       const base = memory.get(key) ?? stored.slice(-COLD_SEED);
       const context = [...base, userMsg].slice(-CONTEXT_WINDOW);
-      reply = (await callLumi(context, lang === "fa" ? "fa" : undefined)) || FALLBACK[lang];
+      reply = (await callLumi(context, lang === "fa" ? "fa" : undefined, memoryContext)) || FALLBACK[lang];
       // Natural lead-ask on a booking signal, at most once per conversation.
       const userMsgCount = stored.filter((m) => m.role === "user").length + 1;
       if (detectBookingSignal(text, reply, userMsgCount) && !leadAlreadyAsked(stored)) {
@@ -107,6 +119,13 @@ export async function POST(req: NextRequest) {
     const full: LumiMessage[] = [...stored, userMsg, { role: "assistant", content: reply }];
     memory.set(key, full.slice(-MEMORY_LIMIT));
     waitUntil(upsertConversation(key, lang, full));
+
+    // Long-term memory (async): summarise at 5 messages, on a lead capture, and
+    // again every 10 messages. Telegram users are not Supabase auth users → null.
+    const total = full.length;
+    if (total === 5 || leadCaptured || (total >= 10 && total % 10 === 0)) {
+      waitUntil(generateAndSaveMemory({ sessionId: key, userId: null, messages: full, language: lang }));
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

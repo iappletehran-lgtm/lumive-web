@@ -10,6 +10,7 @@ import { Framework } from "@/components/sections/Framework";
 import { Readiness } from "@/components/sections/Readiness";
 import { WhyLumive } from "@/components/sections/WhyLumive";
 import { Founder } from "@/components/sections/Founder";
+import { VoiceChat } from "@/components/sections/VoiceChat";
 import { Contact } from "@/components/sections/Contact";
 import { FinalCTA } from "@/components/sections/FinalCTA";
 import { Footer } from "@/components/sections/Footer";
@@ -31,6 +32,7 @@ export default function Home() {
         <WhyLumive />
         <Founder />
         <Readiness />
+        <VoiceChat />
         <Contact />
         <FinalCTA />
       </main>

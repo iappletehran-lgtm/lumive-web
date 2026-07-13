@@ -12,6 +12,7 @@ import {
   lastAssistantWasLeadAsk,
   leadAlreadyAsked,
 } from "@/lib/assistant/leads";
+import { fetchMemory, generateAndSaveMemory, memoryContextBlock } from "@/lib/assistant/memory";
 
 export const runtime = "nodejs";
 
@@ -50,11 +51,23 @@ export async function POST(req: NextRequest) {
   const userText = messages[messages.length - 1]?.content || "";
   const userMsgCount = messages.filter((m) => m.role === "user").length;
 
+  // Returning-visitor memory — fetched before generating the reply so it can shape
+  // the response. Best-effort: if it fails, we continue without it silently.
+  let memoryContext: string | undefined;
+  try {
+    const mem = await fetchMemory(sessionId);
+    if (mem) memoryContext = memoryContextBlock(mem.summary, mem.key_facts, language);
+  } catch {
+    /* no memory — proceed normally */
+  }
+
   let replyText: string;
+  let leadCaptured = false;
   if (lastAssistantWasLeadAsk(messages)) {
     // This message is the visitor's response to our lead-ask — capture it.
     const lead = extractLead(userText);
     if (lead.email || lead.phone) {
+      leadCaptured = true;
       waitUntil(
         captureLead({
           name: lead.name,
@@ -66,27 +79,46 @@ export async function POST(req: NextRequest) {
         })
       );
     }
-    replyText = (await callLumi(messages, language === "fa" ? "fa" : undefined)) || FALLBACK_REPLY;
+    replyText = (await callLumi(messages, language === "fa" ? "fa" : undefined, memoryContext)) || FALLBACK_REPLY;
   } else {
-    replyText = (await callLumi(messages, language === "fa" ? "fa" : undefined)) || FALLBACK_REPLY;
+    replyText = (await callLumi(messages, language === "fa" ? "fa" : undefined, memoryContext)) || FALLBACK_REPLY;
     // Natural lead-ask on a booking signal, at most once per conversation.
     if (detectBookingSignal(userText, replyText, userMsgCount) && !leadAlreadyAsked(messages)) {
       replyText = `${replyText}\n\n${LEAD_ASK[language]}`;
     }
   }
 
+  const fullMessages: LumiMessage[] = [...messages, { role: "assistant", content: replyText }];
+
   // Best-effort conversation log — never blocks the response. waitUntil keeps the
   // function alive until the write finishes (so it isn't cut off when the serverless
   // function freezes after responding), without delaying the reply to the client.
-  waitUntil(
-    logConversation({
-      sessionId,
-      language,
-      messages: [...messages, { role: "assistant", content: replyText }],
-    })
-  );
+  waitUntil(logConversation({ sessionId, language, messages: fullMessages }));
+
+  // Long-term memory (async, never blocks): summarise at 5 messages, on a lead
+  // capture, and again every 10 messages.
+  const total = fullMessages.length;
+  if (sessionId && (total === 5 || leadCaptured || (total >= 10 && total % 10 === 0))) {
+    waitUntil(persistMemory(sessionId, fullMessages, language));
+  }
 
   return NextResponse.json({ reply: replyText });
+}
+
+/**
+ * Resolve the visitor's user id (cookie-based, null when anonymous) then generate
+ * and save the conversation memory. createClient() runs synchronously at the start
+ * (inside the request scope) so the auth cookie is captured before the response.
+ */
+async function persistMemory(sessionId: string, messages: LumiMessage[], language: "en" | "fa") {
+  let userId: string | null = null;
+  try {
+    const { data } = await createClient().auth.getUser();
+    userId = data.user?.id ?? null;
+  } catch {
+    /* anonymous */
+  }
+  await generateAndSaveMemory({ sessionId, userId, messages, language });
 }
 
 /**

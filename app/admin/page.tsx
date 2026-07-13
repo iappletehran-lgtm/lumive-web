@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 type RawChatLog = {
   id: string;
+  session_id: string;
   created_at: string;
   language: string | null;
   user_id: string | null;
@@ -20,26 +21,28 @@ export default async function AdminPage() {
 
   // Service-role reads — bypass RLS. Safe: requireRole("admin") proved the session.
   const admin = createAdminClient();
-  const [{ data: usersData }, { data: bookingsData }, { data: logsData }, { data: leadsData }] = await Promise.all([
-    admin
-      .from("profiles")
-      .select("id, full_name, company, role, created_at")
-      .order("created_at", { ascending: false }),
-    admin
-      .from("bookings")
-      .select("id, full_name, email, selected_slot, payment_id, payment_status, booking_link, created_at")
-      .order("created_at", { ascending: false }),
-    admin
-      .from("chat_logs")
-      .select("id, created_at, language, user_id, messages")
-      .order("created_at", { ascending: false })
-      .limit(1000),
-    admin
-      .from("leads")
-      .select("id, full_name, email, phone_number, company, industry, message, source, language, contacted, created_at")
-      .order("created_at", { ascending: false })
-      .limit(1000),
-  ]);
+  const [{ data: usersData }, { data: bookingsData }, { data: logsData }, { data: leadsData }, { data: memoriesData }] =
+    await Promise.all([
+      admin
+        .from("profiles")
+        .select("id, full_name, company, role, created_at")
+        .order("created_at", { ascending: false }),
+      admin
+        .from("bookings")
+        .select("id, full_name, email, selected_slot, payment_id, payment_status, booking_link, created_at")
+        .order("created_at", { ascending: false }),
+      admin
+        .from("chat_logs")
+        .select("id, session_id, created_at, language, user_id, messages")
+        .order("created_at", { ascending: false })
+        .limit(1000),
+      admin
+        .from("leads")
+        .select("id, full_name, email, phone_number, company, industry, message, source, language, contacted, created_at")
+        .order("created_at", { ascending: false })
+        .limit(1000),
+      admin.from("memories").select("session_id, summary").limit(1000),
+    ]);
 
   const users = (usersData ?? []) as UserRow[];
   const bookings = (bookingsData ?? []) as Booking[];
@@ -63,12 +66,19 @@ export default async function AdminPage() {
       /* email map best-effort — fall back to showing Guest */
     }
   }
+  // session_id → memory summary, to show a "Has memory" badge on chat logs.
+  const memBySession = new Map<string, string>();
+  for (const m of (memoriesData ?? []) as { session_id: string; summary: string | null }[]) {
+    if (m.summary) memBySession.set(m.session_id, m.summary);
+  }
+
   const chatLogs: ChatLogRow[] = rawLogs.map((l) => ({
     id: l.id,
     created_at: l.created_at,
     language: l.language === "fa" ? "fa" : "en",
     user_email: l.user_id ? emailById.get(l.user_id) ?? null : null,
     messages: Array.isArray(l.messages) ? l.messages : [],
+    memorySummary: memBySession.get(l.session_id) ?? null,
   }));
 
   const leads = (leadsData ?? []) as LeadRow[];

@@ -4,7 +4,18 @@
  * model is the latest Gemma 4 on OpenRouter.
  */
 
-export const LUMI_MODEL = "google/gemma-4-31b-it";
+/**
+ * Model fallback chain, tried in order until one returns a usable reply:
+ *   primary → Gemini 2.5 Flash, then Gemma 4, then GPT-4o mini.
+ */
+export const LUMI_MODELS = [
+  "google/gemini-2.5-flash",
+  "google/gemma-4-31b-it",
+  "openai/gpt-4o-mini",
+] as const;
+
+/** Primary model (also used for one-shot tasks like memory summaries). */
+export const LUMI_MODEL = LUMI_MODELS[0];
 
 export const LUMI_GREETING =
   "Hi! I'm Lumi. I can help you understand how AI could work for your business. What's on your mind?";
@@ -97,7 +108,11 @@ export type LumiMessage = { role: "user" | "assistant"; content: string };
  * Get Lumi's reply from OpenRouter. Returns null if no key is configured or the
  * call fails, so the route can degrade to a brand-safe fallback message.
  */
-export async function callLumi(messages: LumiMessage[], lang?: string): Promise<string | null> {
+export async function callLumi(
+  messages: LumiMessage[],
+  lang?: string,
+  extraContext?: string
+): Promise<string | null> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) return null;
 
@@ -105,11 +120,32 @@ export async function callLumi(messages: LumiMessage[], lang?: string): Promise<
 
   // In Persian mode (UI toggle), reinforce Persian replies; the LANGUAGE rules in
   // the system prompt govern brand-name handling (Lumive AI Latin, LUMI → لومی).
-  const system =
+  const langNote =
     lang === "fa"
-      ? `${LUMI_SYSTEM_PROMPT}\n\nThe user has selected Persian. Reply in natural, professional Persian, following the LANGUAGE rules above.`
-      : LUMI_SYSTEM_PROMPT;
+      ? "\n\nThe user has selected Persian. Reply in natural, professional Persian, following the LANGUAGE rules above."
+      : "";
+  // Returning-visitor memory (if any) is prepended ahead of the brand prompt.
+  const system = `${extraContext ? extraContext + "\n\n" : ""}${LUMI_SYSTEM_PROMPT}${langNote}`;
+  const payloadMessages = [
+    { role: "system", content: system },
+    ...messages.map((m) => ({ role: m.role, content: m.content })),
+  ];
 
+  // Try each model in the fallback chain until one returns a usable reply.
+  for (const model of LUMI_MODELS) {
+    const reply = await tryModel(model, payloadMessages, key, site);
+    if (reply) return reply;
+  }
+  return null;
+}
+
+/** One OpenRouter completion for a specific model. Returns null on any failure. */
+async function tryModel(
+  model: string,
+  payloadMessages: { role: string; content: string }[],
+  key: string,
+  site: string
+): Promise<string | null> {
   try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -120,28 +156,18 @@ export async function callLumi(messages: LumiMessage[], lang?: string): Promise<
         "HTTP-Referer": site,
         "X-Title": "Lumive AI Lumi",
       },
-      body: JSON.stringify({
-        model: LUMI_MODEL,
-        messages: [
-          { role: "system", content: system },
-          ...messages.map((m) => ({ role: m.role, content: m.content })),
-        ],
-        temperature: 0.5,
-        max_tokens: 600,
-      }),
+      body: JSON.stringify({ model, messages: payloadMessages, temperature: 0.5, max_tokens: 600 }),
       cache: "no-store",
     });
-
     if (!res.ok) {
-      console.warn("[lumi] OpenRouter", res.status, await res.text().catch(() => ""));
+      console.warn("[lumi] OpenRouter", model, res.status, await res.text().catch(() => ""));
       return null;
     }
-
     const json = await res.json();
     const text = json?.choices?.[0]?.message?.content;
     return typeof text === "string" && text.trim() ? text.trim() : null;
   } catch (err) {
-    console.warn("[lumi] OpenRouter failed:", (err as Error).message);
+    console.warn("[lumi] OpenRouter failed", model, (err as Error).message);
     return null;
   }
 }

@@ -11,6 +11,7 @@ export type ChatLogRow = {
   language: "en" | "fa";
   user_email: string | null; // null → guest
   messages: ChatMessage[];
+  memorySummary?: string | null; // long-term memory summary, if any
 };
 
 type LangFilter = "all" | "en" | "fa";
@@ -189,14 +190,15 @@ export function ChatLogsSection({ logs }: { logs: ChatLogRow[] }) {
                 <Th>{c.thUser}</Th>
                 <Th className="text-center">{c.thCount}</Th>
                 <Th>{c.thPreview}</Th>
+                <Th>{c.memory}</Th>
                 <Th className="text-end">{c.thView}</Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-cloud/50">
               {logs.length === 0 ? (
-                <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-steel/60">{c.empty}</td></tr>
+                <tr><td colSpan={7} className="px-5 py-8 text-center text-sm text-steel/60">{c.empty}</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-steel/60">{c.noMatch}</td></tr>
+                <tr><td colSpan={7} className="px-5 py-8 text-center text-sm text-steel/60">{c.noMatch}</td></tr>
               ) : (
                 filtered.map((l) => {
                   const isOpen = expanded.has(l.id);
@@ -226,6 +228,20 @@ export function ChatLogsSection({ logs }: { logs: ChatLogRow[] }) {
                         <td className="max-w-[280px] px-5 py-4 text-sm text-steel">
                           <span className="line-clamp-1 block truncate">{firstUserMessage(l.messages) || "—"}</span>
                         </td>
+                        <td className="max-w-[300px] px-5 py-4 text-sm">
+                          {l.memorySummary ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="inline-flex w-fit items-center gap-1 rounded-full bg-lumive-light/12 px-2 py-0.5 font-mono text-[9px] font-medium uppercase tracking-wide text-teal">
+                                ✦ {c.hasMemory}
+                              </span>
+                              <span className="line-clamp-2 text-xs leading-snug text-steel/80" title={l.memorySummary}>
+                                {l.memorySummary}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-steel/30">{c.dash}</span>
+                          )}
+                        </td>
                         <td className="px-5 py-4 text-end">
                           <button
                             type="button"
@@ -240,7 +256,7 @@ export function ChatLogsSection({ logs }: { logs: ChatLogRow[] }) {
                       </tr>
                       {isOpen && (
                         <tr className="bg-mist/40">
-                          <td colSpan={6} className="px-5 py-5">
+                          <td colSpan={7} className="px-5 py-5">
                             <div className="space-y-3">
                               {l.messages.map((m, i) => {
                                 const isUser = m.role === "user";
