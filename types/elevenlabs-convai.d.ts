@@ -11,6 +11,9 @@ declare global {
         HTMLElement
       > & {
         "agent-id"?: string;
+        variant?: string;
+        placement?: string;
+        "default-expanded"?: string;
       };
     }
   }
