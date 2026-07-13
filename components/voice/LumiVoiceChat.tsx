@@ -54,8 +54,12 @@ const SILENT_WAV =
  * (single round trip to /api/voice). While waiting for a reply the bars pulse
  * faster. No text is shown.
  *
- * NOTE: this build has verbose "[VOICE]" console logging on every recognition
- * event to diagnose why the transcript sometimes never reaches /api/voice.
+ * Mic handling: SpeechRecognition acquires the microphone itself and prompts for
+ * permission on first start(). We must NOT call getUserMedia ourselves first —
+ * acquiring then releasing a stream leaves recognition with a dead mic in Chrome
+ * (mic opens but hears nothing → endless "no-speech").
+ *
+ * NOTE: this build keeps verbose "[VOICE]" console logging on every event.
  */
 export function LumiVoiceChat() {
   const { t, lang } = useLanguage();
@@ -71,8 +75,8 @@ export function LumiVoiceChat() {
   const activeRef = useRef<boolean>(false);
   const langRef = useRef(lang);
   const beginRecognitionRef = useRef<(() => void) | null>(null);
-  const micGrantedRef = useRef<boolean>(false);
-  const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const noSpeechRef = useRef<boolean>(false);
+  const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { langRef.current = lang; }, [lang]);
 
@@ -81,30 +85,20 @@ export function LumiVoiceChat() {
     return () => {
       try { recRef.current?.abort(); } catch { /* ignore */ }
       try { audioRef.current?.pause(); } catch { /* ignore */ }
-      if (introTimerRef.current) clearTimeout(introTimerRef.current);
+      if (startTimerRef.current) clearTimeout(startTimerRef.current);
     };
   }, []);
 
-  // BUG 3 fix — explicitly request microphone permission (in the user gesture),
-  // then release the stream so SpeechRecognition can use the mic. Without a prior
-  // grant, recognition.start() can end immediately with a "not-allowed" error and
-  // never produce a transcript.
-  const ensureMic = useCallback(async (): Promise<boolean> => {
-    if (micGrantedRef.current) return true;
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      vlog("getUserMedia unavailable");
-      return false;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((tr) => tr.stop()); // only needed the permission grant
-      micGrantedRef.current = true;
-      vlog("mic permission GRANTED");
-      return true;
-    } catch (err) {
-      vlog("mic permission DENIED:", (err as Error).name, "-", (err as Error).message);
-      return false;
-    }
+  // Schedule beginRecognition after `delay` ms (single pending timer at a time),
+  // used both after the intro finishes and to recover from a no-speech timeout.
+  const scheduleRecognition = useCallback((delay: number, why: string) => {
+    if (startTimerRef.current) clearTimeout(startTimerRef.current);
+    startTimerRef.current = setTimeout(() => {
+      startTimerRef.current = null;
+      if (!activeRef.current) return;
+      vlog("beginRecognition (" + why + ")");
+      beginRecognitionRef.current?.();
+    }, delay);
   }, []);
 
   // Unlock audio inside the first gesture so streamed replies can play later.
@@ -156,10 +150,10 @@ export function LumiVoiceChat() {
     playUrl(url, {
       track: true,
       onDone: () => {
-        if (activeRef.current) beginRecognitionRef.current?.();
+        if (activeRef.current) scheduleRecognition(300, "after-reply");
       },
     });
-  }, [playUrl]);
+  }, [playUrl, scheduleRecognition]);
 
   const beginRecognition = useCallback(() => {
     const Ctor = getRecognitionCtor();
@@ -174,13 +168,12 @@ export function LumiVoiceChat() {
       rec.interimResults = false;
       finalRef.current = "";
       sentRef.current = false;
+      noSpeechRef.current = false;
 
       rec.onstart = () => vlog("started");
       rec.onaudiostart = () => vlog("audio start");
       rec.onspeechstart = () => vlog("speech detected");
       rec.onresult = (e) => {
-        // BUG 2 (already ref-based): store transcript in a ref, not state, so onend
-        // reads the fresh value rather than a stale closure.
         let transcript = "";
         for (let i = 0; i < e.results.length; i++) {
           transcript += e.results[i][0]?.transcript ?? "";
@@ -190,16 +183,25 @@ export function LumiVoiceChat() {
       };
       rec.onspeechend = () => vlog("speech ended");
       rec.onnomatch = () => vlog("no match");
-      rec.onerror = (ev) => vlog("ERROR:", ev?.error);
+      rec.onerror = (ev) => {
+        vlog("ERROR:", ev?.error);
+        // No-speech is a silence timeout, not a fatal error — flag it so onend can
+        // restart and keep listening while the mic is on.
+        if (ev?.error === "no-speech") noSpeechRef.current = true;
+      };
       rec.onend = () => {
         vlog("recognition ended — transcript=" + JSON.stringify(finalRef.current) + " active=" + activeRef.current);
-        // A manual mic-off clears activeRef first, so that path neither sends nor
-        // resumes — it just stops.
-        if (!activeRef.current) return;
+        if (!activeRef.current) return; // manual mic-off
         const finalText = finalRef.current.trim();
         if (finalText && !sentRef.current) {
           sentRef.current = true;
           send(finalText);
+          return;
+        }
+        // No transcript. If it was a silence timeout, restart and keep listening.
+        if (noSpeechRef.current) {
+          noSpeechRef.current = false;
+          scheduleRecognition(500, "no-speech-retry");
         } else {
           vlog("nothing to send (empty transcript)");
         }
@@ -211,9 +213,10 @@ export function LumiVoiceChat() {
     } catch (err) {
       vlog("beginRecognition threw:", (err as Error).message);
     }
-  }, [send]);
+  }, [send, scheduleRecognition]);
 
-  // Keep a stable handle so send() can resume listening without a dependency cycle.
+  // Keep a stable handle so send()/scheduleRecognition resume listening without a
+  // dependency cycle.
   useEffect(() => {
     beginRecognitionRef.current = beginRecognition;
   }, [beginRecognition]);
@@ -221,39 +224,30 @@ export function LumiVoiceChat() {
   const startRecording = useCallback(() => {
     activeRef.current = true;
     vlog("startRecording (introDone=" + introDoneRef.current + ")");
-    // Request mic permission up front, inside the user gesture (BUG 3).
-    void ensureMic();
 
     if (!introDoneRef.current) {
-      // First open: Lumi greets, then we start listening (so the greeting isn't
-      // captured as input).
+      // First open: Lumi greets, then we listen. Recognition starts ONLY after the
+      // intro audio's onended (no fallback timer — that raced ahead and opened the
+      // mic while the intro was still playing), plus a 300ms gap so the audio fully
+      // releases before the mic opens.
       introDoneRef.current = true;
       const introText = t.voice.intro;
       const url = `/api/voice/speech?lang=${langRef.current}&text=${encodeURIComponent(introText)}`;
-
-      // BUG 4 fix — start listening when the intro audio ends, but guard with a
-      // fallback timeout in case onended never fires (204/stream/autoplay issues).
-      let started = false;
-      const begin = (why: string) => {
-        if (started || !activeRef.current) return;
-        started = true;
-        if (introTimerRef.current) { clearTimeout(introTimerRef.current); introTimerRef.current = null; }
-        vlog("intro complete (" + why + ") → beginRecognition");
-        beginRecognition();
-      };
-
       vlog("playing intro");
-      playUrl(url, { onDone: () => begin("audio-onended") });
-      introTimerRef.current = setTimeout(() => begin("fallback-timeout-5s"), 5000);
+      playUrl(url, {
+        onDone: () => {
+          if (activeRef.current) scheduleRecognition(300, "after-intro");
+        },
+      });
     } else {
       beginRecognition();
     }
-  }, [beginRecognition, playUrl, ensureMic, t.voice.intro]);
+  }, [beginRecognition, playUrl, scheduleRecognition, t.voice.intro]);
 
   const stopRecording = useCallback(() => {
     // Clear active BEFORE stopping so the pending onend neither sends nor resumes.
     activeRef.current = false;
-    if (introTimerRef.current) { clearTimeout(introTimerRef.current); introTimerRef.current = null; }
+    if (startTimerRef.current) { clearTimeout(startTimerRef.current); startTimerRef.current = null; }
     vlog("stopRecording");
     try { recRef.current?.stop(); } catch { /* already stopped */ }
   }, []);
